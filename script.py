@@ -1,7 +1,7 @@
 import urllib.request
 import geopandas
 from geopandas.tools import sjoin
-
+#C:\Users\vagva\AppData\Local\Programs\Python\Python313\Lib\site-packages\pyogrio\gdal_data
 def get_buildings_and_streets(country:str, city_boundary:str, crs:int):
     """this function downloads the .pbf data from geofabrik and extracts the buildings
 
@@ -28,8 +28,14 @@ def get_buildings_and_streets(country:str, city_boundary:str, crs:int):
 
     ####keep only the buildings in our study area
     city_buildings = sjoin(df_filtered,city,how='inner')
+  
+    city_buildings['hght'] =city_buildings['height']
+    city_buildings['hght'] =city_buildings['hght'].apply(height_level_conv)
+    city_buildings['hght'] =city_buildings['hght'].astype('float')
 
-
+    city_buildings['lvl'] =city_buildings['building_levels']
+    city_buildings['lvl'] =city_buildings['lvl'].apply(height_level_conv)
+    city_buildings['lvl'] =city_buildings['lvl'].astype('float')
 
 
     #get streets
@@ -42,6 +48,20 @@ def get_buildings_and_streets(country:str, city_boundary:str, crs:int):
 
     return [city_buildings, city_streets]
 
+def height_level_conv(height):
+    try:
+        if ',' in height:
+            float(height.split(",")[1].strip())
+            return height.split(",")[1].strip()
+        elif 'm' in height:
+            float(height.split(" ")[0])
+            return height.split(" ")[0]
+        else:
+            float(height)
+            return(height)
+    except (ValueError, TypeError):
+        return None
+    
 
 def get_building_height():
     """"""
@@ -50,6 +70,5 @@ def get_building_height():
 def get_streets(country:str, city_boundary:str, crs:int):
     pass
     
-get_buildings_and_streets("sweden","gbg",3006)
-
-
+a=get_buildings_and_streets("sweden","gbg",3006)
+a[0].to_file("bgbg.shp")

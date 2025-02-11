@@ -1,18 +1,22 @@
 import urllib.request
 import geopandas
 from geopandas.tools import sjoin
+import momepy
+
+
 #C:\Users\vagva\AppData\Local\Programs\Python\Python313\Lib\site-packages\pyogrio\gdal_data
-def get_buildings_and_streets(country:str, city_boundary:str, crs:int):
+
+def get_buildings_and_streets(country:str, city_boundary:str, crs:int, download=True):
     """this function downloads the .pbf data from geofabrik and extracts the buildings
 
     TO DO:
         official city boundaries for sweden will be uploaded to osm soon
     """
 
-    
-    dllink = f"https://download.geofabrik.de/europe/{country}-latest.osm.pbf"
-    savetofile = f"{country}-latest.osm.pbf"
-    #urllib.request.urlretrieve(dllink, savetofile)
+    if download:
+        dllink = f"https://download.geofabrik.de/europe/{country}-latest.osm.pbf"
+        savetofile = f"{country}-latest.osm.pbf"
+        urllib.request.urlretrieve(dllink, savetofile)
 
     #get the buildings
     df = geopandas.read_file(savetofile, engine="pyogrio", layer = 'multipolygons')
@@ -20,8 +24,8 @@ def get_buildings_and_streets(country:str, city_boundary:str, crs:int):
     df_filtered = df[df['building'].notnull()]
     df_filtered = df_filtered.to_crs(crs)
     
-    ###calculate the area of each building
-    df_filtered['area']=df_filtered.area
+    ###calculate the Ground Space (area) of each building
+    df_filtered['GS']=df_filtered.area
     
     city = geopandas.read_file(f"{city_boundary}.shp")
     city = city.to_crs(crs)
@@ -29,13 +33,13 @@ def get_buildings_and_streets(country:str, city_boundary:str, crs:int):
     ####keep only the buildings in our study area
     city_buildings = sjoin(df_filtered,city,how='inner')
   
-    city_buildings['hght'] =city_buildings['height']
-    city_buildings['hght'] =city_buildings['hght'].apply(height_level_conv)
-    city_buildings['hght'] =city_buildings['hght'].astype('float')
+    city_buildings['hght'] = city_buildings['height']
+    city_buildings['hght'] = city_buildings['hght'].apply(height_level_conv)
+    city_buildings['hght'] = city_buildings['hght'].astype('float')
 
-    city_buildings['lvl'] =city_buildings['building_levels']
-    city_buildings['lvl'] =city_buildings['lvl'].apply(height_level_conv)
-    city_buildings['lvl'] =city_buildings['lvl'].astype('float')
+    city_buildings['lvl'] = city_buildings['building_levels']
+    city_buildings['lvl'] = city_buildings['lvl'].apply(height_level_conv)
+    city_buildings['lvl'] = city_buildings['lvl'].astype('float')
 
 
     #get streets
@@ -63,12 +67,37 @@ def height_level_conv(height):
         return None
     
 
-def get_building_height():
-    """"""
+def calculate_building_floorspace(buildings):
+    """calculates FS (Floor Space)"""
+    buildings['FS'] = buildings['GS']*buildings['lvl']
+
+    return buildings
+    
     pass
 
-def get_streets(country:str, city_boundary:str, crs:int):
-    pass
+def compute_morphometric_indicators(buildings):
+    """taken from https://github.com/perezjoan/Population-Potential-on-Catchment-Area---PPCA-Worldwide/blob/main/current%20release%20(v1.0.5)/STEP%201%20-%20DATA%20ACQUISITION%20-%20FILTERS%20-%20MORPHOMETRY.ipynb"""
+
+    # Calculating perimeter
+    buildings['P'] = buildings.length
+
+    # Calculating elongation
+    buildings['E'] = momepy.Elongation(buildings).series
+
+    # Convexity
+    building_filtered.loc[:, 'C'] = momepy.Convexity(buildings)
+
+    # Product [1-E].C.S
+    buildings['ECA'] = (1 - building_filtered['E']) * building_filtered['GS'] * building_filtered['C']
+
+    # [1-E].S
+    buildings['EA'] = (1 - building_filtered['E']) * building_filtered['GS']
+
+    return buildings
+
     
-a=get_buildings_and_streets("sweden","gbg",3006)
-a[0].to_file("bgbg.shp")
+a=get_buildings_and_streets("sweden", "gbg", 3006, download=False)
+b=compute_morphometric_indicators(a[0])
+
+b.to_file("bgbg_morph.shp")
+

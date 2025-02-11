@@ -12,10 +12,10 @@ def get_buildings_and_streets(country:str, city_boundary:str, crs:int, download=
     TO DO:
         official city boundaries for sweden will be uploaded to osm soon
     """
+    dllink = f"https://download.geofabrik.de/europe/{country}-latest.osm.pbf"
+    savetofile = f"{country}-latest.osm.pbf"
 
-    if download:
-        dllink = f"https://download.geofabrik.de/europe/{country}-latest.osm.pbf"
-        savetofile = f"{country}-latest.osm.pbf"
+    if download:    
         urllib.request.urlretrieve(dllink, savetofile)
 
     #get the buildings

@@ -12,12 +12,12 @@ def get_buildings_and_streets(country:str, city_boundary:str, crs:int, download=
     TO DO:
         official city boundaries for sweden will be uploaded to osm soon
     """
-    dllink = f"https://download.geofabrik.de/europe/{country}-latest.osm.pbf"
     savetofile = f"{country}-latest.osm.pbf"
+    dllink = f"https://download.geofabrik.de/europe/{country}-latest.osm.pbf"
 
-    if download:    
+    if download:
         urllib.request.urlretrieve(dllink, savetofile)
-
+    
     #get the buildings
     df = geopandas.read_file(savetofile, engine="pyogrio", layer = 'multipolygons')
     df = df.to_crs(crs)
@@ -78,20 +78,21 @@ def calculate_building_floorspace(buildings):
 def compute_morphometric_indicators(buildings):
     """taken from https://github.com/perezjoan/Population-Potential-on-Catchment-Area---PPCA-Worldwide/blob/main/current%20release%20(v1.0.5)/STEP%201%20-%20DATA%20ACQUISITION%20-%20FILTERS%20-%20MORPHOMETRY.ipynb"""
 
+
     # Calculating perimeter
-    buildings['P'] = buildings.length
+    buildings.loc[:, 'P'] = buildings.geometry.length
 
     # Calculating elongation
-    buildings['E'] = momepy.Elongation(buildings).series
+    buildings.loc[:, 'E'] = momepy.Elongation(buildings).series
 
     # Convexity
-    building_filtered.loc[:, 'C'] = momepy.Convexity(buildings)
+    buildings.loc[:, 'C'] = momepy.Convexity(buildings).series
 
     # Product [1-E].C.S
-    buildings['ECA'] = (1 - building_filtered['E']) * building_filtered['GS'] * building_filtered['C']
+    buildings.loc[:, 'ECA'] = (1 - buildings['E']) * buildings['GS'] * buildings['C']
 
     # [1-E].S
-    buildings['EA'] = (1 - building_filtered['E']) * building_filtered['GS']
+    buildings.loc[:, 'EA'] = (1 - buildings['E']) * buildings['GS']
 
     return buildings
 

@@ -53,7 +53,7 @@ def get_buildings_and_streets(country:str, city_boundary:str, crs:int, download=
 
 
     city_buildings = city_buildings[city_buildings['GS'] >= 15]
-
+    #city_buildings.to_file("gothenburg_buildings.shp")
 
     #get streets
     df = geopandas.read_file("sweden-latest.osm.pbf",engine="pyogrio",layer = 'lines')
@@ -62,6 +62,8 @@ def get_buildings_and_streets(country:str, city_boundary:str, crs:int, download=
     filtered_df = filtered_df.to_crs(3006)
 
     city_streets = sjoin(filtered_df, city, how='inner')
+
+    
 
     return [city_buildings, city_streets]
 
@@ -120,16 +122,44 @@ def assign_type(building_type):
         return 1
     else:
         return 2
-
-
-
-def floor_estimation(buildings, Training_ratio = 0.7):
-    """https://github.com/perezjoan/Population-Potential-on-Catchment-Area---PPCA-Worldwide/blob/main/current%20release%20(v1.0.5)/STEP%203%20-%20FLOOR%20ESTIMATION.ipynb"""
+        
+def assign_function(building_type):
     
+    building_functions = {
+                        'accommodation': {'apartments', 'barracks', 'bungalow', 'cabin', 'detached', 'annexe', 'dormitory', 'farm',	
+                                         'ger', 'hotel', 'house', 'houseboat', 'residential', 'semidetached_house', 'static_caravan',	
+                                         'stilt_house', 'terrace', 'tree_house', 'trullo'},
+                        'commercial':   {'commercial', 'industrial', 'kiosk', 'office', 'retail', 'supermarket', 'warehouse'},
+                        'religious':    {'religious', 'cathedral', 'chapel', 'church', 'kingdom_hall', 'monastery', 'mosque', 'presbytery', 'shrine', 'synagogue', 'temple'},
+                        'civic':        {'bakehouse', 'bridge', 'civic', 'college', 'fire_station', 'government', 'gatehouse', 'hospital',
+                                        'kindergarten', 'museum', 'public', 'school', 'toilets', 'train_station', 'transportation', 'university'},
+                        'agricultural': {'barn', 'conservatory', 'cowshed', 'farm_auxiliary', 'greenhouse', 'slurry_tank', 'stable', 'sty', 'livestock'},
+                        'sports':       {'grandstand', 'pavilion', 'riding_hall', 'sports_hall', 'sports_centre', 'stadium'},
+                        'storage':      {'allotment_house', 'boathouse', 'hangar', 'hut', 'shed'},
+                        'cars':         {'carport', 'garage', 'garages', 'parking'},
+                        'technical':    {'digester', 'service', 'tech_cab', 'transformer_tower', 'water_tower', 'storage_tank', 'silo'},
+                        'other':        {'beach_hut', 'bunker', 'castle', 'construction', 'container', 'guardhouse', 'military', 'outbuilding',
+                                          'pagoda', 'quonset_hut', 'roof', 'ruins', 'ship', 'tent', 'tower', 'triumphal_arch', 'windmill', 'yes'}
+                        }
+
+    for key in building_functions.keys():
+        if building_type in building_functions[key]:
+            return key
+
+    
+    
+
+def floor_estimation(buildings, building_function=None, include_types=None, exclude_types=None,  Training_ratio = 0.7):
+    """https://github.com/perezjoan/Population-Potential-on-Catchment-Area---PPCA-Worldwide/blob/main/current%20release%20(v1.0.5)/STEP%203%20-%20FLOOR%20ESTIMATION.ipynb"""
 
     # Add a new column 'type' and apply the conditions
     buildings.loc[:, 'type'] = buildings['building'].apply(assign_type)
-    buildings = buildings[buildings['type'] == 1]
+    buildings.loc[:, 'function'] = buildings['building'].apply(assign_function)
+    buildings = buildings[buildings['function'] == building_function]
+    if include_types:
+        buildings = buildings[buildings['building'].isin(include_types)]
+    if exclude_types:
+        buildings = buildings[~buildings['building'].isin(exclude_types)]
 
     print(f"Running floor estimations")
     #we start by computing the morphometric indicators
@@ -138,7 +168,6 @@ def floor_estimation(buildings, Training_ratio = 0.7):
     # Ensure height & level columns are numeric
     buildings['hght'] = pd.to_numeric(buildings['hght'], errors='coerce')
     buildings['lvl'] = pd.to_numeric(buildings['lvl'], errors='coerce')
-
     # checks if height is Null and if floor is non Null
     # If both conditions are met : multiplies the value of floor by 3 and assigns it to height
     buildings['hght'] = buildings.apply(lambda row: row['lvl'] * 3 if pd.isna(row['hght']) and not pd.isna(row['lvl']) else row['hght'], axis=1)
@@ -146,7 +175,11 @@ def floor_estimation(buildings, Training_ratio = 0.7):
     # checks if the height is not Null and if the floor is Null
     # If both conditions are met : divides the value of height by 3 and assigns it to level
     buildings['lvl'] = buildings.apply(lambda row: round(row['hght'] / 3) if pd.isna(row['lvl']) and not pd.isna(row['hght']) else row['lvl'], axis=1)
-    
+
+    #for some buildings we can guess the floor levels
+    buildings['lvl'] = buildings.apply(lambda row: 2 if pd.isna(row['lvl']) and row['building'] in ['house', 'detached', 'semidetached_house'] else row['lvl'], axis=1)
+    buildings['lvl'] = buildings.apply(lambda row: 1 if pd.isna(row['lvl']) and row['building'] in ['bungalow', 'cabin', 'static_caravan'] else row['lvl'], axis=1)
+    print(f"Calculating building floor space area")
     #calculate the building floorspace
     buildings = calculate_building_floorspace(buildings)
 
@@ -251,7 +284,7 @@ def run_Attraction_Reach_analysis():
 
     
 a=get_buildings_and_streets("sweden", "gbg", 3006, download=False)
-b=floor_estimation(a[0])
+b=floor_estimation(a[0], 'accommodation', exclude_types=['house', 'detached', 'semidetached_house','bungalow', 'cabin', 'static_caravan'])
 
 b.to_file("bgbg_levels.shp")
 

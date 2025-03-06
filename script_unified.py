@@ -17,7 +17,7 @@ import sys, array
 
 import time
 
-sys.path.append("C:/Users/evavaf/OneDrive - Chalmers/Buildingdensities/pst/pstalgo/python")
+sys.path.append("C:/Users/vagva/OneDrive/Documents/PST_UC/pstqgis_3.3.1_2024-11-01/pst/pstalgo/python")
 import pstalgo
 
 from pstalgo import Radii, DistanceType, OriginType
@@ -36,7 +36,7 @@ input_data= {
             'pst_params':{
                 'radius_type':'walking',
                 'radius_threshold':500,
-                'unlinks': "C:/Users/evavaf/OneDrive - Chalmers/Buildingdensities/Density types_2017/roads/GOT/got_unlinks.shp" #shapefile with unlinks
+                'unlinks': '' #shapefile with unlinks
                 },
             'cluster_centers': np.array([
                                         [0.11, 0.17],
@@ -117,7 +117,7 @@ def get_streets(city_boundary:str, crs:int, download=True):
         official city boundaries for sweden will be uploaded to osm soon
     """
     starttime = time.time()
-    print("Step C: Getting streets.....", end='')
+    print("Step C: Getting streets.....")
 
     # Import data
     area = gpd.read_file(city_boundary)
@@ -132,22 +132,30 @@ def get_streets(city_boundary:str, crs:int, download=True):
     # Retrieve the non-motorized street network within the buffer
     multi_graph_non_motorized = ox.graph_from_polygon(buffer_non_motorized, network_type='all',
                                                       simplify=False, retain_all=True)
-
+    print("\t Preprocess non motorized graph....", end="")
     simple_graph_non_motorized = preprocess_non_motorized_graph(multi_graph_non_motorized)
+    print(f"Done")
 
+    
     # Collect edges to keep
     edges_to_keep = [
         (u, v) for u, v, data in simple_graph_non_motorized.edges(data=True)
         if should_keep_non_motorized_edge(data)
     ]
-        
+
+    print("\t Keep non motorized edge....", end="")    
     # Create a new graph with only the edges to keep
     filtered_graph_non_motorized = simple_graph_non_motorized.edge_subgraph(edges_to_keep).copy()
+    print(f"Done")
 
+    print("\t Remove isolated islands....", end="")
     cleaned_graph_non_motorized = remove_isolated_islands(filtered_graph_non_motorized)
-
+    print(f"Done")
+    
+    print("\t Graph to Geodataframe....", end="")
     gdf_non_motorized = graph_to_geodataframe(cleaned_graph_non_motorized)
-
+    print(f"Done")
+    
     endtime =  time.time()
     print(f"Done ({int(endtime-starttime)} sec)")
 
@@ -179,6 +187,7 @@ def preprocess_non_motorized_graph(multi_graph_non_motorized):
     return simple_graph_non_motorized
 
 def should_keep_non_motorized_edge(edge_data):
+    
     # Safely get attributes
     highway = edge_data.get('highway')
     service = edge_data.get('service')
@@ -208,6 +217,7 @@ def should_keep_non_motorized_edge(edge_data):
     return keep_highway and keep_service and keep_access and keep_junction
 
 def remove_isolated_islands(graph):
+   
     # Identify all connected components in the graph
     connected_components = list(nx.connected_components(graph))
 
@@ -221,6 +231,7 @@ def remove_isolated_islands(graph):
 
 
 def graph_to_geodataframe(graph, crs='EPSG:4326'):
+    
     # Extract the edges and their attributes
     edges_list = [
         (u, v, d.get('osmid'), d.get('name'), d.get('length'), d.get('highway'), d.get('maxspeed'), d.get('service'), d.get('access'), d.get('junction'), d.get('geometry'))
@@ -235,7 +246,7 @@ def graph_to_geodataframe(graph, crs='EPSG:4326'):
         crs=crs
     )
 
-    gdf = gdf.to_crs('EPSG:3006')
+    gdf = gdf.to_crs(input_data['crs'])
 
     return gdf
 
@@ -318,7 +329,7 @@ def floor_estimation(buildings, city_boundary:str, Training_ratio = 0.7):
     """https://github.com/perezjoan/Population-Potential-on-Catchment-Area---PPCA-Worldwide/blob/main/current%20release%20(v1.0.5)/STEP%203%20-%20FLOOR%20ESTIMATION.ipynb"""
 
     starttime = time.time()
-    print(f"Step B: Running floor estimations", end='')
+    print(f"Step B: Running floor estimations")
 
 
     
@@ -335,12 +346,12 @@ def floor_estimation(buildings, city_boundary:str, Training_ratio = 0.7):
     #buildings['lvl'] = buildings.apply(lambda row: 1 if pd.isna(row['lvl']) and row['building'] in ['bungalow', 'cabin', 'static_caravan'] else row['lvl'], axis=1)
 
     
-    print(f"Calculating building floor space area")
+    print(f"\t Calculating building floor space area")
     #calculate the building floorspace
     buildings = calculate_building_floorspace(buildings)
 
     ## 2. DECISION TREE CLASSIFIER TO EVALUATE THE MISSING NUMBER OF FLOORS
-    print("Step 2: Decision tree classifier for missing floors")
+    print("\t Step 2: Decision tree classifier for missing floors")
     # 2.1 SUBSET DATA INTO TRAIN AND TEST DATA
 
     # List of columns to keep
@@ -369,7 +380,7 @@ def floor_estimation(buildings, city_boundary:str, Training_ratio = 0.7):
     data_test = building_non_null[~mask]
 
     # 2.2 CALCULATE DECISION TREE CLASSIFIER & PRINT ACCURACY
-    print("Step 2.2: Training decision tree classifier")
+    print("\t Step 2.2: Training decision tree classifier")
     # Initialize the Decision Tree Classifier
     np.random.seed(45)
     clf = DecisionTreeClassifier()
@@ -397,10 +408,10 @@ def floor_estimation(buildings, city_boundary:str, Training_ratio = 0.7):
 
     # Calculate the accuracy
     accuracy = accuracy_score(y_test, y_pred)
-    print(f"Accuracy on test data: {accuracy:.2f}")
+    print(f"\t Accuracy on test data: {accuracy:.2f}")
 
     # Apply the model to building_null
-    print("Step 2.2: Applying model to missing floor data")
+    print("\t Step 2.2: Applying model to missing floor data")
     # Ensure that we are using the same features as those used during training
     X_null = building_null.drop(columns=['lvl'])
 
@@ -412,7 +423,7 @@ def floor_estimation(buildings, city_boundary:str, Training_ratio = 0.7):
     building_null['lvl'] = clf.predict(X_null)
 
     # 2.3 APPLY THE TREE TO THE NULL VALUES
-    print("Step 2.3: Applying decision tree to the entire dataset")
+    print("\t Step 2.3: Applying decision tree to the entire dataset")
     X_null = building_filtered.drop(columns=['lvl'])
 
     # Predict the types for building_null
@@ -449,6 +460,8 @@ def floor_estimation(buildings, city_boundary:str, Training_ratio = 0.7):
 
 
 def perform_Reach_Analysis(road_network, crs, radius_type, radius_threshold, unlinks=None, origin_points=None):
+    starttime=time.time()
+    print("Perform reach analysis....", end="")
     """ Perform a PST Reach Analysis
         Input:
             - road_network: shapefile with road network
@@ -492,14 +505,16 @@ def perform_Reach_Analysis(road_network, crs, radius_type, radius_threshold, unl
             point_coords.append(row['y'])
 
         unlinks = array.array('d', point_coords)
-        
+        graph = pstalgo.CreateGraph(line_coords, None, unlinks, None, None)
+    else:
+       ### prepare the graph
+        graph = pstalgo.CreateGraph(line_coords, None, None, None, None) 
 
 
-    ### prepare the graph
-    graph = pstalgo.CreateGraph(line_coords, None, unlinks, None, None)
+    
 
     #If origin points were provided
-    if origin_points:
+    if origin_points is not None:
         
         ### Import origin poins and set crs
         buildings = gpd.read_file(origin_points)
@@ -544,7 +559,8 @@ def perform_Reach_Analysis(road_network, crs, radius_type, radius_threshold, unl
 
     # Free up the mnemory associated with the graph
     pstalgo.FreeGraph(graph)  # Or "FreeSegmentGraph"
-
+    endtime=time.time()
+    print(f"Done ({int(endtime-starttime)} sec)")
     if origin_points:
         buildings[f'RAc{radius_type[0]}{radius_threshold}']=pd.Series(reached_count)
         buildings[f'RAl{radius_type[0]}{radius_threshold}']=pd.Series(reached_length)
@@ -561,7 +577,7 @@ def perform_Reach_Analysis(road_network, crs, radius_type, radius_threshold, unl
 
 
 ##################Attraction Reach analysis############################
-def perform_Attraction_Reach_Analysis(road_network, crs, radius_type, radius_threshold, unlinks=None, origin_points=None, destinations=None, weight_attr=None):
+def perform_Attraction_Reach_Analysis(road_network, crs, radius_type, radius_threshold, unlinks=None, origin_points=None, destinations=None, weight_attr=None,outputname=None):
     """ Perform a PST Reach Analysis
         Input:
             - road_network: shapefile with road network
@@ -576,6 +592,9 @@ def perform_Attraction_Reach_Analysis(road_network, crs, radius_type, radius_thr
             - geodataframe with 1 additional columns, each representing:
                 - score: the total weighted attraction reached from each origin point or road segment
     """
+
+    starttime=time.time()
+    print("Perform Attraction Reach Analysis....", end='')
 
     radius_args = {radius_type:radius_threshold}
     radius = Radii(**radius_args)
@@ -691,9 +710,14 @@ def perform_Attraction_Reach_Analysis(road_network, crs, radius_type, radius_thr
     # Free up the memory associated with the graph
     pstalgo.FreeGraph(graph)  # Or "FreeSegmentGraph"
 
+    endtime=time.time()
+    print(f"Done ({int(endtime-starttime)} sec)")
 
     if origin_points:
-        origins[f'ARA{radius_type[0]}{radius_threshold}']=pd.Series(scores)
+        if outputname is None:
+            origins[f'ARA{radius_type[0]}{radius_threshold}']=pd.Series(scores)
+        else:
+            origins[f'{outputname}']=pd.Series(scores)
         origins = origins.drop('cnt', axis=1)
         return origins
     
@@ -701,19 +725,22 @@ def perform_Attraction_Reach_Analysis(road_network, crs, radius_type, radius_thr
         roads[f'ARA{radius_type[0]}{radius_threshold}']=pd.Series(scores)
         return roads
 
-def calculate_FSI(dataframe):
-    pass
+def calculate_FSI(dataframe, catchment_area, total_ground_area):
+    dataframe['FSI'] = dataframe[total_ground_area]/dataframe[catchment_area]
+    return dataframe
 
-def calculate_GSI(dataframe):
-    pass
+def calculate_GSI(dataframe, catchment_area, total_floor_area):
+    dataframe['GSI'] = dataframe[total_floor_area]/dataframe[catchment_area]
+    return dataframe
 
 
 
 
 def calculate_clusters (dataframe, cluster_centers):
+    dataframe=dataframe[dataframe['RAaw500']>0]
 
-
-    kmeans = KMeans(n_clusters=7, init= centers, n_init=1, max_iter=1).fit(centers)
+    kmeans = KMeans(n_clusters=len(cluster_centers), init= cluster_centers, n_init=1, max_iter=1).fit(cluster_centers)
+    
 
     kmeans_predict=kmeans.predict(dataframe[['GSI','FSI']].to_numpy())
 
@@ -725,42 +752,49 @@ def calculate_clusters (dataframe, cluster_centers):
 
 ###################SCRIPT EXECUTION####################################
 
-stepA=get_buildings(input_data['country'], input_data['crs'], download=False)
-stepB=floor_estimation(stepA, input_data['area'])
-stepC=get_streets(input_data['area'], input_data['crs'])
+#stepA=get_buildings(input_data['country'], input_data['crs'], download=False)
+#stepA.to_file("buildings_sweden.shp")
+buildingsdf=gpd.read_file("buildings_sweden.shp")
 
-stepD=perform_Reach_Analysis(stepC,
-                         input_data['crs'],
-                         input_data['pst_params']['radius_type'],
-                         input_data['pst_params']['radius_threshold'],
-                         input_data['pst_params']['unlinks'],
-                         stepB)
+stepB=floor_estimation(buildingsdf, input_data['area'])
+stepB.to_file("buildings_floors.shp")
+
+stepC=get_streets(input_data['area'], input_data['crs'])
+stepC.to_file("streetnonmotorized.shp")
+
+stepD=perform_Reach_Analysis(road_network="streetnonmotorized.shp",
+                             crs=input_data['crs'],
+                             radius_type=input_data['pst_params']['radius_type'],
+                             radius_threshold=input_data['pst_params']['radius_threshold'],
+                             origin_points="buildings_floors.shp")
 stepD.to_file("got_buildings_reach_test_Test2.shp")
 
-stepE=perform_Attraction_Reach_Analysis(stepC,
-                         input_data['crs'],
-                         input_data['pst_params']['radius_type'],
-                         input_data['pst_params']['radius_threshold'],
-                         input_data['pst_params']['unlinks'],
-                         "got_buildings_reach_test_Test2.shp",
-                         stepB,
-                         'B_Area')
-stepE.to_file("got_buildings_reach_test_Test3.shp")
-stepG=perform_Attraction_Reach_Analysis(stepC,
-                         input_data['crs'],
-                         input_data['pst_params']['radius_type'],
-                         input_data['pst_params']['radius_threshold'],
-                         input_data['pst_params']['unlinks'],
-                         "got_buildings_reach_test_Test3.shp",
-                         stepB,
-                         'B_GFArea')
-stepG.to_file("got_buildings_reach_test_Test4.shp")
-stepH=calculate_FSI()
-stepI=calculate_GSI()
-stepJ=calculate_clusters(stepI)
+stepE=perform_Attraction_Reach_Analysis(road_network="streetnonmotorized.shp",
+                         crs=input_data['crs'],
+                         radius_type=input_data['pst_params']['radius_type'],
+                         radius_threshold=input_data['pst_params']['radius_threshold'],
+                         origin_points="got_buildings_reach_test_Test2.shp",
+                         destinations="buildings_floors.shp",
+                         weight_attr='B_Area',
+                         outputname='AFS')
 
-stepJ.to_file(input_data['outputfile'])
+stepF=calculate_FSI(stepE,'RAaw500','AFS')
+stepF.to_file("got_buildings_reach_test_Test3.shp")
+
+stepG=perform_Attraction_Reach_Analysis(road_network="streetnonmotorized.shp",
+                         crs=input_data['crs'],
+                         radius_type=input_data['pst_params']['radius_type'],
+                         radius_threshold=input_data['pst_params']['radius_threshold'],
+                         origin_points="got_buildings_reach_test_Test3.shp",
+                         destinations="buildings_floors.shp",
+                         weight_attr='B_GFArea',
+                         outputname='AGS')
+stepH=calculate_GSI(stepG,'RAaw500','AGS')
+stepH.to_file("got_buildings_reach_test_Test4.shp")
+
+stepI=calculate_clusters(stepH, input_data['cluster_centers'])
+
+stepI.to_file(input_data['outputfile'])
 
 
 
-b.to_file("bgbg_levels_trained_from_sweden.shp")

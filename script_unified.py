@@ -14,10 +14,12 @@ from sklearn.cluster import KMeans
 import warnings
 from sklearn.preprocessing import OneHotEncoder
 import sys, array
+import rasterio
+from rasterstats import zonal_stats
 
 import time
 
-sys.path.append("C:/Users/vagva/OneDrive/Documents/PST_UC/pstqgis_3.3.1_2024-11-01/pst/pstalgo/python")
+sys.path.append("C:/Users/evavaf/OneDrive - Chalmers/Buildingdensities/pst/pstalgo/python")
 import pstalgo
 
 from pstalgo import Radii, DistanceType, OriginType
@@ -31,12 +33,117 @@ warnings.simplefilter('ignore')
 
 input_data= {
             'country': 'sweden',
-            'area': 'gbg.shp', #path to a polygon shapefile containing the study area
+            'study_area': 'gbg.shp', #path to a polygon shapefile containing the study area
             'crs': 3006, #epsg number of the area's crs
+            'copernicus_raster_file': r"C:/Users/evavaf/OneDrive - Chalmers/Buildingdensities/SE002_GÖTEBORG_UA2012_DHM_V010.tif",
             'pst_params':{
                 'radius_type':'walking',
                 'radius_threshold':500,
                 'unlinks': '' #shapefile with unlinks
+                },
+            'building_floors': {
+                "allotment_house":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "annexe":{"keep":"yes","ceiling_height":3,"floor_numbers":None},
+                "apartments":{"keep":"yes","ceiling_height":3.5,"floor_numbers":None},
+                "barracks":{"keep":"yes","ceiling_height":3.5,"floor_numbers":None},
+                "barn":{"keep":"no","ceiling_height":None,"floor_numbers":1},
+                "bungalow":{"keep":"yes","ceiling_height":3.5,"floor_numbers":1},
+                "beach_hut":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "boathouse":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "bridge":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "cabin":{"keep":"yes","ceiling_height":3.5,"floor_numbers":1},
+                "bunker":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "detached":{"keep":"yes","ceiling_height":3.5,"floor_numbers":1.5},
+                "carport":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "castle":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "dormitory":{"keep":"yes","ceiling_height":3.5,"floor_numbers":None},
+                "farm":{"keep":"yes","ceiling_height":3,"floor_numbers":1},
+                "hotel":{"keep":"yes","ceiling_height":3.5,"floor_numbers":None},
+                "house":{"keep":"yes","ceiling_height":3.5,"floor_numbers":1.5},
+                "residential":{"keep":"yes","ceiling_height":3.5,"floor_numbers":None},
+                "semidetached_house":{"keep":"yes","ceiling_height":3.5,"floor_numbers":1.5},
+                "conservatory":{"keep":"no","ceiling_height":None,"floor_numbers":1},
+                "construction":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "container":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "cowshed":{"keep":"no","ceiling_height":None,"floor_numbers":1},
+                "static_caravan":{"keep":"yes","ceiling_height":3,"floor_numbers":1},
+                "digester":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "stilt_house":{"keep":"yes","ceiling_height":3.5,"floor_numbers":None},
+                "terrace":{"keep":"yes","ceiling_height":3.5,"floor_numbers":1.5},
+                "farm_auxiliary":{"keep":"no","ceiling_height":None,"floor_numbers":1},
+                "parking":{"keep":"yes","ceiling_height":3,"floor_numbers":None},
+                "garage":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "garages":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "gatehouse":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "ger":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "bakehouse":{"keep":"yes","ceiling_height":3,"floor_numbers":None},
+                "civic":{"keep":"yes","ceiling_height":None,"floor_numbers":None},
+                "greenhouse":{"keep":"no","ceiling_height":None,"floor_numbers":1},
+                "guardhouse":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "hangar":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "college":{"keep":"yes","ceiling_height":None,"floor_numbers":1.5},
+                "fire_station":{"keep":"yes","ceiling_height":None,"floor_numbers":1.5},
+                "government":{"keep":"yes","ceiling_height":None,"floor_numbers":None},
+                "houseboat":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "hut":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "hospital":{"keep":"yes","ceiling_height":None,"floor_numbers":None},
+                "kindergarten":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
+                "museum":{"keep":"yes","ceiling_height":None,"floor_numbers":2},
+                "public":{"keep":"yes","ceiling_height":None,"floor_numbers":None},
+                "livestock":{"keep":"no","ceiling_height":None,"floor_numbers":1},
+                "military":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "school":{"keep":"yes","ceiling_height":None,"floor_numbers":None},
+                "train_station":{"keep":"yes","ceiling_height":None,"floor_numbers":None},
+                "transportation":{"keep":"yes","ceiling_height":None,"floor_numbers":None},
+                "university":{"keep":"yes","ceiling_height":None,"floor_numbers":None},
+                "outbuilding":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "pagoda":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "commercial":{"keep":"yes","ceiling_height":4.5,"floor_numbers":None},
+                "industrial":{"keep":"yes","ceiling_height":6,"floor_numbers":None},
+                "kiosk":{"keep":"yes","ceiling_height":3,"floor_numbers":1},
+                "office":{"keep":"yes","ceiling_height":4.5,"floor_numbers":None},
+                "quonset_hut":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "retail":{"keep":"yes","ceiling_height":4.5,"floor_numbers":None},
+                "supermarket":{"keep":"yes","ceiling_height":4.5,"floor_numbers":None},
+                "warehouse":{"keep":"yes","ceiling_height":6,"floor_numbers":1},
+                "cathedral":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
+                "roof":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "ruins":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "chapel":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
+                "church":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
+                "service":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "shed":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "ship":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "kingdom_hall":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
+                "silo":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "slurry_tank":{"keep":"no","ceiling_height":None,"floor_numbers":1},
+                "monastery":{"keep":"yes","ceiling_height":None,"floor_numbers":None},
+                "mosque":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
+                "stable":{"keep":"no","ceiling_height":None,"floor_numbers":1},
+                "presbytery":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
+                "religious":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
+                "shrine":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
+                "storage_tank":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "sty":{"keep":"no","ceiling_height":None,"floor_numbers":1},
+                "synagogue":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
+                "temple":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
+                "tech_cab":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "grandstand":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
+                "tent":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "pavilion":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
+                "toilets":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "tower":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "riding_hall":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
+                "transformer_tower":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "sports_centre":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
+                "tree_house":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "triumphal_arch":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "trullo":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "sports_hall":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
+                "stadium":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
+                "water_tower":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "windmill":{"keep":"no","ceiling_height":None,"floor_numbers":None},
+                "yes":{"keep":"yes","ceiling_height":None,"floor_numbers":None}
                 },
             'cluster_centers': np.array([
                                         [0.11, 0.17],
@@ -46,6 +153,14 @@ input_data= {
                                         [0.19, 0.92],
                                         [0.12, 0.50],
                                         [0.39, 3.32]
+                                    ]),
+            'cluster_centers2': np.array([
+                                        [0.11, 0.17],
+                                        [0.18, 0.44],
+                                        [0.34, 1.66],
+                                        [0.35, 0.78],
+                                        [0.19, 0.92],
+                                        [0.12, 0.50]
                                     ]),
             'outputfile': "results.shp" #path to the output file
     }
@@ -60,7 +175,7 @@ input_data= {
 
 #C:\Users\vagva\AppData\Local\Programs\Python\Python313\Lib\site-packages\pyogrio\gdal_data
 
-def get_buildings(country:str, crs:int, download=True):
+def get_buildings(country:str, crs:int, city_boundary = None, drop_btypes=None, download=True):
     """Given the country and a shapefile as a city boundary
        this function downloads the .pbf data from geofabrik
        and extracts the buildings
@@ -83,6 +198,11 @@ def get_buildings(country:str, crs:int, download=True):
     df = df.to_crs(crs)
     df_filtered = df[df['building'].notnull()]
     df_filtered = df_filtered.to_crs(crs)
+
+    #keep only the building types we are interested in
+    if drop_btypes:
+        drop_building_types(buildings, drop_btypes)
+    
     
     ###calculate the Ground Space (area) of each building
     df_filtered['GS']=df_filtered.area
@@ -97,15 +217,237 @@ def get_buildings(country:str, crs:int, download=True):
     # Ensure height & level columns are numeric
     df_filtered['hght'] = pd.to_numeric(df_filtered['hght'], errors='coerce')
     df_filtered['lvl'] = pd.to_numeric(df_filtered['lvl'], errors='coerce')
+    
+    ####keep only the buildings in our study area
+    if city_boundary:
+        city = gpd.read_file(f"{city_boundary}")
+        city = city.to_crs(df_filtered.crs)
+        buildings = sjoin(df_filtered,city,how='inner')
+    else:
+        buildings = df_filtered
+        
 
     #compute the morphometric indicators
-    compute_morphometric_indicators(df_filtered)
+    compute_morphometric_indicators(buildings)
 
     endtime = time.time()
     print(f"Done ({int(endtime-starttime)}sec) ")
 
-    return df_filtered
+    return buildings
 
+def drop_building_types(buildings, drop_btypes):
+        drop_types_list=[]
+        for btype in input_data['building_floors'].keys():
+            if input_data['building_floors'][btype]['keep']=='no':
+                drop_types_list.append(btype)
+        df_filtered=df_filtered.drop(df[df.building.isin(drop_types_list)].index)
+    
+
+def get_building_height_from_copernicus(buildings,raster):
+
+    #read the raster and get crs
+    src = rasterio.open(raster)
+    raster_crs = src.crs.to_authority()[1]
+
+    #read the vector and set its crs to the one of the raster
+    buildings=buildings.to_crs(int(raster_crs))
+
+    #calcualte the mean height value for each building 
+    buildings["cop_mean_height"] = [x["mean"] for x in zonal_stats(buildings, raster, stats="mean")]
+
+    return buildings
+    
+
+def calculate_building_floorspace(buildings):
+    """calculates FS (Floor Space)"""
+
+    buildings['FS'] = buildings['GS']*buildings['lvl']
+
+    return buildings
+
+def compute_morphometric_indicators(buildings):
+    """taken from https://github.com/perezjoan/Population-Potential-on-Catchment-Area---PPCA-Worldwide/blob/main/current%20release%20(v1.0.5)/STEP%201%20-%20DATA%20ACQUISITION%20-%20FILTERS%20-%20MORPHOMETRY.ipynb"""
+    
+
+    # Calculating perimeter
+    buildings.loc[:, 'P'] = buildings.geometry.length
+
+    # Calculating elongation
+    buildings.loc[:, 'E'] = momepy.elongation(buildings)
+
+    # Convexity
+    buildings.loc[:, 'C'] = momepy.convexity(buildings)
+
+    # Product [1-E].C.S
+    buildings.loc[:, 'ECA'] = (1 - buildings['E']) * buildings['GS'] * buildings['C']
+
+    # [1-E].S
+    buildings.loc[:, 'EA'] = (1 - buildings['E']) * buildings['GS']
+
+    # Shared walls
+    warnings.filterwarnings("ignore", category=FutureWarning, module="momepy")
+    buildings.loc[:, "SW"] = momepy.SharedWallsRatio(buildings).series
+
+    return buildings
+
+
+
+
+def calculate_floors_from_building_height(buildings, building_floors):
+
+    #make sure we include additional building types from the dataset to our assumptions
+    building_types = buildings['building'].unique()
+    for btype in building_types:
+        if btype  not in input_data['building_floors'].keys():
+            print(btype)
+            input_data['building_floors'][btype] = {"keep":"yes","ceiling_height":None,"floor_numbers":None}
+
+    
+    buildings['lvl'] = buildings.apply(lambda row: round(row['hght'] / building_floors[row['building']]['ceiling_height']) if pd.isna(row['lvl']) and not pd.isna(row['hght']) and building_floors[row['building']]['ceiling_height']  else row['lvl'], axis=1)
+
+    return buildings
+
+def assign_assumed_floors(buildings, building_floors):
+
+    
+    buildings['lvl'] = buildings.apply(lambda row: building_floors[row['building']]['floor_numbers'] if pd.isna(row['lvl']) and pd.isna(row['hght']) and building_floors[row['building']]['floor_numbers'] else row['lvl'], axis=1)
+
+    return buildings
+
+def predict_floor_number(buildings, model_train = 'local', Training_ratio = 0.7):
+    """https://github.com/perezjoan/Population-Potential-on-Catchment-Area---PPCA-Worldwide/blob/main/current%20release%20(v1.0.5)/STEP%203%20-%20FLOOR%20ESTIMATION.ipynb"""
+    print(f"\t Calculating building floor space area")
+    #calculate the building floorspace
+    buildings = calculate_building_floorspace(buildings)
+
+    ## 2. DECISION TREE CLASSIFIER TO EVALUATE THE MISSING NUMBER OF FLOORS
+    print("\t Step 2: Decision tree classifier for missing floors")
+    # 2.1 SUBSET DATA INTO TRAIN AND TEST DATA
+
+    # List of columns to keep
+    columns_to_keep = ['building', 'GS', 'P', 'E', 'C', 'FS', 'ECA', 'EA', 'SW', 'lvl']
+
+
+    # Subset the DataFrame
+    building_filtered = buildings[columns_to_keep]
+
+    #create dummy variables from building type
+    building_filtered = pd.get_dummies(building_filtered, prefix='type', dtype=float) 
+
+
+    # Create two subsets: one with non-null 'FL' and one with null 'FL'
+    building_non_null = building_filtered[building_filtered['lvl'].notnull()]
+    building_null = building_filtered[building_filtered['lvl'].isnull()]
+
+    # Set a random seed for reproducibility
+    np.random.seed(45)
+
+    # Create a boolean mask for selecting the data for training
+    mask = np.random.rand(len(building_non_null)) < Training_ratio
+
+    # Split the data into training and testing sets
+    data_train = building_non_null[mask]
+    data_test = building_non_null[~mask]
+
+    # 2.2 CALCULATE DECISION TREE CLASSIFIER & PRINT ACCURACY
+    print("\t Training decision tree classifier")
+    # Initialize the Decision Tree Classifier
+    np.random.seed(45)
+    clf = DecisionTreeClassifier()
+
+    # Explicitly cast FL to float64 before rounding and converting to categorical
+    data_train = data_train.copy()
+    data_test = data_test.copy()
+    
+    data_train['lvl'] = data_train['lvl'].astype(np.float64).round().astype('int32').astype('category')
+    data_test['lvl'] = data_test['lvl'].astype(np.float64).round().astype('int32').astype('category')
+
+    # Separate the target variable and features for the training set
+    X_train = data_train.drop(columns=['lvl'])
+    y_train = data_train['lvl']
+
+    # Train the classifier
+    clf.fit(X_train, y_train)
+
+    # Separate the features and target variable for the test set
+    X_test = data_test.drop(columns=['lvl'])
+    y_test = data_test['lvl']
+
+    # Make predictions on the test set
+    y_pred = clf.predict(X_test)
+
+    # Calculate the accuracy
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f"\t Accuracy on test data: {accuracy:.2f}")
+
+    # Apply the model to building_null
+    print("\t Applying model to missing floor data")
+    # Ensure that we are using the same features as those used during training
+    X_null = building_null.drop(columns=['lvl'])
+
+    # Make sure there are no additional columns
+    X_null = X_null[X_train.columns]
+
+    # Predict the types for building_null
+    building_null = building_null.copy()
+    building_null['lvl'] = clf.predict(X_null)
+
+    # 2.3 APPLY THE TREE TO THE NULL VALUES
+    print("\t Applying decision tree to the entire dataset")
+    X_null = building_filtered.drop(columns=['lvl'])
+
+    # Predict the types for building_null
+    building_filtered = building_filtered.copy()  # Ensure we are working on a copy
+    building_filtered.loc[:, 'lvl_pred'] = clf.predict(X_null)
+
+    # Keep only one column from building_filtered
+    type_pred = building_filtered[['lvl_pred']]
+
+    # Concatenate along columns
+    building_final = pd.concat([buildings.reset_index(drop=True), type_pred.reset_index(drop=True)], axis=1)
+
+    # Create the 'FL_filled' column which take the non null values of FL, otherwise fill the null values with the model predictions
+    building_final['lvl_filled'] = np.where(building_final['lvl'].notna(), 
+                                           building_final['lvl'], 
+                                           building_final['lvl_pred'])
+
+    # Correction of FA (floor-area) using 'FL_filled'
+    building_final['FS'] = building_final['lvl_filled'] * building_final['GS']
+
+    building_final['B_Area']= building_final['GS']
+    building_final['B_GFArea'] = building_final['lvl_filled'] * building_final['B_Area']
+
+
+    return building_final
+
+
+def floor_estimation(buildings, copernicus_data= None, building_assumptions = None,  assumed_ceiling_heights=False, assumed_floor_number=False, model_train='local'):
+
+    print(f"Step B: Running floor estimations")
+
+    #Get the building height from Copernicus if there is available data
+    if copernicus_data:
+        buildings = get_building_height_from_copernicus(buildings, copernicus_data)
+
+    #If we have building height from copernicus keep that, if we don't, use the OSM height, if we don't have OSM height, leave it empty
+    buildings['height_final'] = buildings.apply(lambda row: row['cop_mean_height'] if not pd.isna(row['cop_mean_height'])  else row['hght'] if not pd.isna(row['hght']) else np.nan, axis=1)
+
+    #If we know the building height and type, calculate the number of floors based on building height and celing height assumption for each building type
+    if assumed_ceiling_heights:
+        buildings = calculate_floors_from_building_height(buildings, building_assumptions)
+
+    #If we don't know the building height but we know the building type assign number of floors for some building types based on assumptions
+    if assumed_floor_numbers:
+        buildings = assign_assumed_floors(buildings, building_assumptions)
+
+    #for the rest of the buildings where we don't know the building floors, train a model to predict it.
+    buildings = predict_floor_number(buildings, model_train=model_train)
+
+    return buildings
+
+
+    
+    
 
 def get_streets(city_boundary:str, crs:int, download=True):
 
@@ -249,214 +591,6 @@ def graph_to_geodataframe(graph, crs='EPSG:4326'):
     gdf = gdf.to_crs(input_data['crs'])
 
     return gdf
-
-def height_level_conv(height):
-    try:
-        float(height)
-        return(height)
-    except (ValueError, TypeError):
-        return None
-    
-
-def calculate_building_floorspace(buildings):
-    """calculates FS (Floor Space)"""
-
-    buildings['FS'] = buildings['GS']*buildings['lvl']
-
-    return buildings
-
-def compute_morphometric_indicators(buildings):
-    """taken from https://github.com/perezjoan/Population-Potential-on-Catchment-Area---PPCA-Worldwide/blob/main/current%20release%20(v1.0.5)/STEP%201%20-%20DATA%20ACQUISITION%20-%20FILTERS%20-%20MORPHOMETRY.ipynb"""
-    
-
-    # Calculating perimeter
-    buildings.loc[:, 'P'] = buildings.geometry.length
-
-    # Calculating elongation
-    buildings.loc[:, 'E'] = momepy.elongation(buildings)
-
-    # Convexity
-    buildings.loc[:, 'C'] = momepy.convexity(buildings)
-
-    # Product [1-E].C.S
-    buildings.loc[:, 'ECA'] = (1 - buildings['E']) * buildings['GS'] * buildings['C']
-
-    # [1-E].S
-    buildings.loc[:, 'EA'] = (1 - buildings['E']) * buildings['GS']
-
-    # Shared walls
-    warnings.filterwarnings("ignore", category=FutureWarning, module="momepy")
-    buildings.loc[:, "SW"] = momepy.SharedWallsRatio(buildings).series
-
-    return buildings
-
-def assign_type(building_type):
-    if building_type == 'yes':
-        return 0
-    elif building_type in ['apartments', 'barracks', 'house', 'residential', 'bungalow', 'cabin', 'detached', 'dormitory', 'farm', 'static_caravan',
-                              'semidetached_house', 'stilt_house']:
-        return 1
-    else:
-        return 2
-        
-def assign_function(building_type):
-    
-    building_functions = {
-                        'accommodation': {'apartments', 'barracks', 'bungalow', 'cabin', 'detached', 'annexe', 'dormitory', 'farm',	
-                                         'ger', 'hotel', 'house', 'houseboat', 'residential', 'semidetached_house', 'static_caravan',	
-                                         'stilt_house', 'terrace', 'tree_house', 'trullo'},
-                        'commercial':   {'commercial', 'industrial', 'kiosk', 'office', 'retail', 'supermarket', 'warehouse'},
-                        'religious':    {'religious', 'cathedral', 'chapel', 'church', 'kingdom_hall', 'monastery', 'mosque', 'presbytery', 'shrine', 'synagogue', 'temple'},
-                        'civic':        {'bakehouse', 'bridge', 'civic', 'college', 'fire_station', 'government', 'gatehouse', 'hospital',
-                                        'kindergarten', 'museum', 'public', 'school', 'toilets', 'train_station', 'transportation', 'university'},
-                        'agricultural': {'barn', 'conservatory', 'cowshed', 'farm_auxiliary', 'greenhouse', 'slurry_tank', 'stable', 'sty', 'livestock'},
-                        'sports':       {'grandstand', 'pavilion', 'riding_hall', 'sports_hall', 'sports_centre', 'stadium'},
-                        'storage':      {'allotment_house', 'boathouse', 'hangar', 'hut', 'shed'},
-                        'cars':         {'carport', 'garage', 'garages', 'parking'},
-                        'technical':    {'digester', 'service', 'tech_cab', 'transformer_tower', 'water_tower', 'storage_tank', 'silo'},
-                        'other':        {'beach_hut', 'bunker', 'castle', 'construction', 'container', 'guardhouse', 'military', 'outbuilding',
-                                          'pagoda', 'quonset_hut', 'roof', 'ruins', 'ship', 'tent', 'tower', 'triumphal_arch', 'windmill', 'yes'}
-                        }
-
-    for key in building_functions.keys():
-        if building_type in building_functions[key]:
-            return key
-
-    
-    
-
-def floor_estimation(buildings, city_boundary:str, Training_ratio = 0.7):
-    """https://github.com/perezjoan/Population-Potential-on-Catchment-Area---PPCA-Worldwide/blob/main/current%20release%20(v1.0.5)/STEP%203%20-%20FLOOR%20ESTIMATION.ipynb"""
-
-    starttime = time.time()
-    print(f"Step B: Running floor estimations")
-
-
-    
-    # checks if height is Null and if floor is non Null
-    # If both conditions are met : multiplies the value of floor by 3 and assigns it to height
-    buildings['hght'] = buildings.apply(lambda row: row['lvl'] * 3 if pd.isna(row['hght']) and not pd.isna(row['lvl']) else row['hght'], axis=1)
-
-    # checks if the height is not Null and if the floor is Null
-    # If both conditions are met : divides the value of height by 3 and assigns it to level
-    buildings['lvl'] = buildings.apply(lambda row: round(row['hght'] / 3) if pd.isna(row['lvl']) and not pd.isna(row['hght']) else row['lvl'], axis=1)
-
-    #for some buildings we can guess the floor levels
-    #buildings['lvl'] = buildings.apply(lambda row: 2 if pd.isna(row['lvl']) and row['building'] in ['house', 'detached', 'semidetached_house'] else row['lvl'], axis=1)
-    #buildings['lvl'] = buildings.apply(lambda row: 1 if pd.isna(row['lvl']) and row['building'] in ['bungalow', 'cabin', 'static_caravan'] else row['lvl'], axis=1)
-
-    
-    print(f"\t Calculating building floor space area")
-    #calculate the building floorspace
-    buildings = calculate_building_floorspace(buildings)
-
-    ## 2. DECISION TREE CLASSIFIER TO EVALUATE THE MISSING NUMBER OF FLOORS
-    print("\t Step 2: Decision tree classifier for missing floors")
-    # 2.1 SUBSET DATA INTO TRAIN AND TEST DATA
-
-    # List of columns to keep
-    columns_to_keep = ['building', 'GS', 'P', 'E', 'C', 'FS', 'ECA', 'EA', 'SW', 'lvl']
-
-
-    # Subset the DataFrame
-    building_filtered = buildings[columns_to_keep]
-
-
-    building_filtered = pd.get_dummies(building_filtered, prefix='type', dtype=float) 
-
-
-    # Create two subsets: one with non-null 'FL' and one with null 'FL'
-    building_non_null = building_filtered[building_filtered['lvl'].notnull()]
-    building_null = building_filtered[building_filtered['lvl'].isnull()]
-
-    # Set a random seed for reproducibility
-    np.random.seed(45)
-
-    # Create a boolean mask for selecting the data for training
-    mask = np.random.rand(len(building_non_null)) < Training_ratio
-
-    # Split the data into training and testing sets
-    data_train = building_non_null[mask]
-    data_test = building_non_null[~mask]
-
-    # 2.2 CALCULATE DECISION TREE CLASSIFIER & PRINT ACCURACY
-    print("\t Step 2.2: Training decision tree classifier")
-    # Initialize the Decision Tree Classifier
-    np.random.seed(45)
-    clf = DecisionTreeClassifier()
-
-    # Explicitly cast FL to float64 before rounding and converting to categorical
-    data_train = data_train.copy()
-    data_test = data_test.copy()
-    
-    data_train['lvl'] = data_train['lvl'].astype(np.float64).round().astype('int32').astype('category')
-    data_test['lvl'] = data_test['lvl'].astype(np.float64).round().astype('int32').astype('category')
-
-    # Separate the target variable and features for the training set
-    X_train = data_train.drop(columns=['lvl'])
-    y_train = data_train['lvl']
-
-    # Train the classifier
-    clf.fit(X_train, y_train)
-
-    # Separate the features and target variable for the test set
-    X_test = data_test.drop(columns=['lvl'])
-    y_test = data_test['lvl']
-
-    # Make predictions on the test set
-    y_pred = clf.predict(X_test)
-
-    # Calculate the accuracy
-    accuracy = accuracy_score(y_test, y_pred)
-    print(f"\t Accuracy on test data: {accuracy:.2f}")
-
-    # Apply the model to building_null
-    print("\t Step 2.2: Applying model to missing floor data")
-    # Ensure that we are using the same features as those used during training
-    X_null = building_null.drop(columns=['lvl'])
-
-    # Make sure there are no additional columns
-    X_null = X_null[X_train.columns]
-
-    # Predict the types for building_null
-    building_null = building_null.copy()
-    building_null['lvl'] = clf.predict(X_null)
-
-    # 2.3 APPLY THE TREE TO THE NULL VALUES
-    print("\t Step 2.3: Applying decision tree to the entire dataset")
-    X_null = building_filtered.drop(columns=['lvl'])
-
-    # Predict the types for building_null
-    building_filtered = building_filtered.copy()  # Ensure we are working on a copy
-    building_filtered.loc[:, 'lvl_pred'] = clf.predict(X_null)
-
-    # Keep only one column from building_filtered
-    type_pred = building_filtered[['lvl_pred']]
-
-    # Concatenate along columns
-    building_final = pd.concat([buildings.reset_index(drop=True), type_pred.reset_index(drop=True)], axis=1)
-
-    # Create the 'FL_filled' column which take the non null values of FL, otherwise fill the null values with the model predictions
-    building_final['lvl_filled'] = np.where(building_final['lvl'].notna(), 
-                                           building_final['lvl'], 
-                                           building_final['lvl_pred'])
-
-    # Correction of FA (floor-area) using 'FL_filled'
-    building_final['FS'] = building_final['lvl_filled'] * building_final['GS']
-
-    building_final['B_Area']= building_final['GS']
-    building_final['B_GFArea'] = building_final['lvl_filled'] * building_final['B_Area']
-
-    ####keep only the buildings in our study area
-
-    city = gpd.read_file(f"{city_boundary}")
-    city = city.to_crs(building_final.crs)
-    city_buildings = sjoin(building_final,city,how='inner')
-
-    endtime = time.time()
-    print(f"Done ({int(endtime-starttime)}sec) ")
-
-    return city_buildings
 
 
 def perform_Reach_Analysis(road_network, crs, radius_type, radius_threshold, unlinks=None, origin_points=None):
@@ -737,9 +871,10 @@ def calculate_GSI(dataframe, catchment_area, total_floor_area):
 
 
 def calculate_clusters (dataframe, cluster_centers):
-    dataframe=dataframe[dataframe['RAaw500']>0]
+    #dataframe=dataframe[dataframe['RAaw500']>0]
 
-    kmeans = KMeans(n_clusters=len(cluster_centers), init= cluster_centers, n_init=1, max_iter=1).fit(cluster_centers)
+    kmeans = KMeans(n_clusters=len(cluster_centers), init= cluster_centers, n_init=10, max_iter=300).fit(cluster_centers)
+    print(kmeans.cluster_centers_)
     
 
     kmeans_predict=kmeans.predict(dataframe[['GSI','FSI']].to_numpy())
@@ -752,49 +887,71 @@ def calculate_clusters (dataframe, cluster_centers):
 
 ###################SCRIPT EXECUTION####################################
 
-#stepA=get_buildings(input_data['country'], input_data['crs'], download=False)
-#stepA.to_file("buildings_sweden.shp")
-buildingsdf=gpd.read_file("buildings_sweden.shp")
+stepA=get_buildings(input_data['country'], input_data['crs'], input_data['study_area'],  download=False)
+stepA.to_file("buildings_gbg_drop_btypes4.shp")
+buildingsdf=gpd.read_file("buildings_gbg_drop_btypes4.shp")
 
-stepB=floor_estimation(buildingsdf, input_data['area'])
-stepB.to_file("buildings_floors.shp")
+stepB=floor_estimation(buildingsdf, copernicus_data=input_data['copernicus_raster_file'],building_assumptions = input_data['building_floors'], assumed_ceiling_heights = True, assumed_floor_number = True)
+stepB.to_file("GBG_buildings_floors.shp")
 
-stepC=get_streets(input_data['area'], input_data['crs'])
-stepC.to_file("streetnonmotorized.shp")
+#stepC=get_streets(input_data['study_area'], input_data['crs'])
+#stepC.to_file("streetnonmotorized.shp")
 
-stepD=perform_Reach_Analysis(road_network="streetnonmotorized.shp",
-                             crs=input_data['crs'],
-                             radius_type=input_data['pst_params']['radius_type'],
-                             radius_threshold=input_data['pst_params']['radius_threshold'],
-                             origin_points="buildings_floors.shp")
-stepD.to_file("got_buildings_reach_test_Test2.shp")
+#stepD=perform_Reach_Analysis(road_network="streetnonmotorized.shp",
+#                             crs=input_data['crs'],
+#                             radius_type=input_data['pst_params']['radius_type'],
+#                             radius_threshold=input_data['pst_params']['radius_threshold'],
+#                             origin_points="buildings_floors.shp")
+#stepD.to_file("got_buildings_reach_test_Test2.shp")
 
-stepE=perform_Attraction_Reach_Analysis(road_network="streetnonmotorized.shp",
-                         crs=input_data['crs'],
-                         radius_type=input_data['pst_params']['radius_type'],
-                         radius_threshold=input_data['pst_params']['radius_threshold'],
-                         origin_points="got_buildings_reach_test_Test2.shp",
-                         destinations="buildings_floors.shp",
-                         weight_attr='B_Area',
-                         outputname='AFS')
+#stepE=perform_Attraction_Reach_Analysis(road_network="streetnonmotorized.shp",
+#                         crs=input_data['crs'],
+#                         radius_type=input_data['pst_params']['radius_type'],
+#                         radius_threshold=input_data['pst_params']['radius_threshold'],
+#                         origin_points="got_buildings_reach_test_Test2.shp",
+#                         destinations="buildings_floors.shp",
+#                         weight_attr='B_Area',
+#                         outputname='AFS')
 
-stepF=calculate_FSI(stepE,'RAaw500','AFS')
-stepF.to_file("got_buildings_reach_test_Test3.shp")
+#stepF=calculate_FSI(stepE,'RAaw500','AFS')
+#stepF.to_file("got_buildings_reach_test_Test3.shp")
 
-stepG=perform_Attraction_Reach_Analysis(road_network="streetnonmotorized.shp",
-                         crs=input_data['crs'],
-                         radius_type=input_data['pst_params']['radius_type'],
-                         radius_threshold=input_data['pst_params']['radius_threshold'],
-                         origin_points="got_buildings_reach_test_Test3.shp",
-                         destinations="buildings_floors.shp",
-                         weight_attr='B_GFArea',
-                         outputname='AGS')
-stepH=calculate_GSI(stepG,'RAaw500','AGS')
-stepH.to_file("got_buildings_reach_test_Test4.shp")
+#stepG=perform_Attraction_Reach_Analysis(road_network="streetnonmotorized.shp",
+#                         crs=input_data['crs'],
+#                         radius_type=input_data['pst_params']['radius_type'],
+#                         radius_threshold=input_data['pst_params']['radius_threshold'],
+#                         origin_points="got_buildings_reach_test_Test3.shp",
+#                         destinations="buildings_floors.shp",
+#                         weight_attr='B_GFArea',
+#                         outputname='AGS')
+#stepH=calculate_GSI(stepG,'RAaw500','AGS')
+#stepH.to_file("got_buildings_reach_test_Test4.shp")
 
-stepI=calculate_clusters(stepH, input_data['cluster_centers'])
+#stepI=calculate_clusters(stepH, input_data['cluster_centers'])
 
-stepI.to_file(input_data['outputfile'])
+#stepI.to_file(input_data['outputfile'])
+
+#stepJ=calculate_clusters(stepH, input_data['cluster_centers2'])
+#stepJ.to_file('results2.shp')
+
+##
 
 
+def calculate_clusters_2 (dataframe, cluster_centers):
 
+    kmeans = KMeans(n_clusters=len(cluster_centers), init= cluster_centers, n_init=50, max_iter=5000).fit(dataframe[['GSI','FSI']].to_numpy())
+
+
+    dataframe['clusters']=kmeans.labels_+1
+    print(kmeans.cluster_centers_)
+    return dataframe
+
+#gbg_buildings=gpd.read_file("GOT_Building_Local_CL7_fixed_nonzero.shp")
+#a=calculate_clusters_2(gbg_buildings, input_data['cluster_centers'])
+#a.to_file("gbg_clusters_7.shp")
+#b=calculate_clusters_2(gbg_buildings, input_data['cluster_centers2'])
+#b.to_file("gbg_clusters_6.shp")
+#c=calculate_clusters(gbg_buildings, input_data['cluster_centers'])
+#c.to_file("gbg_clusters_noiter__7.shp")
+#d=calculate_clusters(gbg_buildings, input_data['cluster_centers2'])
+#d.to_file("gbg_clusters_noiter_6.shp")

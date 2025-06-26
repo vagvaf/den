@@ -35,115 +35,123 @@ input_data= {
             'country': 'sweden',
             'study_area': 'gbg.shp', #path to a polygon shapefile containing the study area
             'crs': 3006, #epsg number of the area's crs
-            'copernicus_raster_file': r"C:/Users/evavaf/OneDrive - Chalmers/Buildingdensities/SE002_GÖTEBORG_UA2012_DHM_V010.tif",
+            'min_building_area': 20,
+            'drop_btypes': False,
+            'floor_levels':{
+                    'copernicus_raster_file': r"C:/Users/evavaf/OneDrive - Chalmers/Buildingdensities/SE002_GÖTEBORG_UA2012_DHM_V010.tif",
+                    'floors_levels_model_train_local':True,
+                    'assumed_ceiling_heights': True,
+                    'assumed_floor_number': True,
+                    'use_btypes_for_training': True,
+                    'building_floors': {
+                        'allotment_house':{'keep':'yes','ceiling_height':None,'floor_numbers':None},
+                        'annexe':{'keep':'yes','ceiling_height':3,'floor_numbers':None},
+                        'apartments':{'keep':'yes','ceiling_height':3.5,'floor_numbers':None},
+                        'bakehouse':{'keep':'yes','ceiling_height':3,'floor_numbers':None},
+                        'barn':{'keep':'yes','ceiling_height':None,'floor_numbers':1},
+                        'barracks':{'keep':'yes','ceiling_height':3.5,'floor_numbers':None},
+                        'beach_hut':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'boathouse':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'bridge':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'bungalow':{'keep':'yes','ceiling_height':3.5,'floor_numbers':1},
+                        'bunker':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'cabin':{'keep':'yes','ceiling_height':3.5,'floor_numbers':1},
+                        'carport':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'castle':{'keep':'yes','ceiling_height':5,'floor_numbers':None},
+                        'cathedral':{'keep':'yes','ceiling_height':None,'floor_numbers':1},
+                        'chapel':{'keep':'yes','ceiling_height':None,'floor_numbers':1},
+                        'church':{'keep':'yes','ceiling_height':None,'floor_numbers':1},
+                        'civic':{'keep':'yes','ceiling_height':5,'floor_numbers':None},
+                        'college':{'keep':'yes','ceiling_height':4.5,'floor_numbers':None},
+                        'commercial':{'keep':'yes','ceiling_height':4.5,'floor_numbers':None},
+                        'conservatory':{'keep':'no','ceiling_height':None,'floor_numbers':1},
+                        'construction':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'container':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'cowshed':{'keep':'no','ceiling_height':None,'floor_numbers':1},
+                        'detached':{'keep':'yes','ceiling_height':3.5,'floor_numbers':2},
+                        'digester':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'dormitory':{'keep':'yes','ceiling_height':3.5,'floor_numbers':None},
+                        'farm':{'keep':'yes','ceiling_height':3,'floor_numbers':1},
+                        'farm_auxiliary':{'keep':'yes','ceiling_height':None,'floor_numbers':1},
+                        'fire_station':{'keep':'yes','ceiling_height':None,'floor_numbers':1.5},
+                        'garage':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'garages':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'gatehouse':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'ger':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'government':{'keep':'yes','ceiling_height':4.5,'floor_numbers':None},
+                        'grandstand':{'keep':'yes','ceiling_height':None,'floor_numbers':1},
+                        'greenhouse':{'keep':'no','ceiling_height':None,'floor_numbers':1},
+                        'guardhouse':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'hangar':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'hospital':{'keep':'yes','ceiling_height':4.5,'floor_numbers':None},
+                        'hotel':{'keep':'yes','ceiling_height':3.5,'floor_numbers':None},
+                        'house':{'keep':'yes','ceiling_height':3.5,'floor_numbers':1.5},
+                        'houseboat':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'hut':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'industrial':{'keep':'yes','ceiling_height':6,'floor_numbers':None},
+                        'kindergarten':{'keep':'yes','ceiling_height':None,'floor_numbers':1},
+                        'kingdom_hall':{'keep':'yes','ceiling_height':None,'floor_numbers':1},
+                        'kiosk':{'keep':'yes','ceiling_height':3,'floor_numbers':1},
+                        'livestock':{'keep':'no','ceiling_height':None,'floor_numbers':1},
+                        'military':{'keep':'?','ceiling_height':None,'floor_numbers':None},
+                        'monastery':{'keep':'yes','ceiling_height':None,'floor_numbers':1.5},
+                        'mosque':{'keep':'yes','ceiling_height':None,'floor_numbers':1},
+                        'museum':{'keep':'yes','ceiling_height':5,'floor_numbers':None},
+                        'office':{'keep':'yes','ceiling_height':4.5,'floor_numbers':None},
+                        'outbuilding':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'pagoda':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'parking':{'keep':'yes','ceiling_height':3,'floor_numbers':None},
+                        'pavilion':{'keep':'yes','ceiling_height':None,'floor_numbers':1},
+                        'presbytery':{'keep':'yes','ceiling_height':None,'floor_numbers':1},
+                        'public':{'keep':'yes','ceiling_height':4.5,'floor_numbers':None},
+                        'quonset_hut':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'religious':{'keep':'yes','ceiling_height':None,'floor_numbers':1},
+                        'residential':{'keep':'yes','ceiling_height':3.5,'floor_numbers':None},
+                        'retail':{'keep':'yes','ceiling_height':5,'floor_numbers':None},
+                        'riding_hall':{'keep':'yes','ceiling_height':None,'floor_numbers':1},
+                        'roof':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'ruins':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'school':{'keep':'yes','ceiling_height':4.5,'floor_numbers':None},
+                        'semidetached_house':{'keep':'yes','ceiling_height':3.5,'floor_numbers':1.5},
+                        'service':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'shed':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'ship':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'shrine':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'silo':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'slurry_tank':{'keep':'no','ceiling_height':None,'floor_numbers':1},
+                        'sports_centre':{'keep':'yes','ceiling_height':None,'floor_numbers':1},
+                        'sports_hall':{'keep':'yes','ceiling_height':None,'floor_numbers':1},
+                        'stable':{'keep':'no','ceiling_height':None,'floor_numbers':1},
+                        'stadium':{'keep':'yes','ceiling_height':None,'floor_numbers':1},
+                        'static_caravan':{'keep':'no','ceiling_height':3,'floor_numbers':1},
+                        'stilt_house':{'keep':'yes','ceiling_height':3.5,'floor_numbers':None},
+                        'storage_tank':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'sty':{'keep':'no','ceiling_height':None,'floor_numbers':1},
+                        'supermarket':{'keep':'yes','ceiling_height':5,'floor_numbers':None},
+                        'synagogue':{'keep':'yes','ceiling_height':None,'floor_numbers':1},
+                        'tech_cab':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'temple':{'keep':'yes','ceiling_height':None,'floor_numbers':1},
+                        'tent':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'terrace':{'keep':'yes','ceiling_height':3.5,'floor_numbers':1.5},
+                        'toilets':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'tower':{'keep':'?','ceiling_height':None,'floor_numbers':None},
+                        'train_station':{'keep':'yes','ceiling_height':None,'floor_numbers':1},
+                        'transformer_tower':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'transportation':{'keep':'yes','ceiling_height':None,'floor_numbers':1},
+                        'tree_house':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'triumphal_arch':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'trullo':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'university':{'keep':'yes','ceiling_height':4.5,'floor_numbers':None},
+                        'warehouse':{'keep':'yes','ceiling_height':6,'floor_numbers':1},
+                        'water_tower':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'windmill':{'keep':'no','ceiling_height':None,'floor_numbers':None},
+                        'yes':{'keep':'yes','ceiling_height':None,'floor_numbers':None},
+                    }
+                },
             'pst_params':{
                 'radius_type':'walking',
                 'radius_threshold':500,
                 'unlinks': '' #shapefile with unlinks
-                },
-            'building_floors': {
-                "allotment_house":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "annexe":{"keep":"yes","ceiling_height":3,"floor_numbers":None},
-                "apartments":{"keep":"yes","ceiling_height":3.5,"floor_numbers":None},
-                "barracks":{"keep":"yes","ceiling_height":3.5,"floor_numbers":None},
-                "barn":{"keep":"no","ceiling_height":None,"floor_numbers":1},
-                "bungalow":{"keep":"yes","ceiling_height":3.5,"floor_numbers":1},
-                "beach_hut":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "boathouse":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "bridge":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "cabin":{"keep":"yes","ceiling_height":3.5,"floor_numbers":1},
-                "bunker":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "detached":{"keep":"yes","ceiling_height":3.5,"floor_numbers":1.5},
-                "carport":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "castle":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "dormitory":{"keep":"yes","ceiling_height":3.5,"floor_numbers":None},
-                "farm":{"keep":"yes","ceiling_height":3,"floor_numbers":1},
-                "hotel":{"keep":"yes","ceiling_height":3.5,"floor_numbers":None},
-                "house":{"keep":"yes","ceiling_height":3.5,"floor_numbers":1.5},
-                "residential":{"keep":"yes","ceiling_height":3.5,"floor_numbers":None},
-                "semidetached_house":{"keep":"yes","ceiling_height":3.5,"floor_numbers":1.5},
-                "conservatory":{"keep":"no","ceiling_height":None,"floor_numbers":1},
-                "construction":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "container":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "cowshed":{"keep":"no","ceiling_height":None,"floor_numbers":1},
-                "static_caravan":{"keep":"yes","ceiling_height":3,"floor_numbers":1},
-                "digester":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "stilt_house":{"keep":"yes","ceiling_height":3.5,"floor_numbers":None},
-                "terrace":{"keep":"yes","ceiling_height":3.5,"floor_numbers":1.5},
-                "farm_auxiliary":{"keep":"no","ceiling_height":None,"floor_numbers":1},
-                "parking":{"keep":"yes","ceiling_height":3,"floor_numbers":None},
-                "garage":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "garages":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "gatehouse":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "ger":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "bakehouse":{"keep":"yes","ceiling_height":3,"floor_numbers":None},
-                "civic":{"keep":"yes","ceiling_height":None,"floor_numbers":None},
-                "greenhouse":{"keep":"no","ceiling_height":None,"floor_numbers":1},
-                "guardhouse":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "hangar":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "college":{"keep":"yes","ceiling_height":None,"floor_numbers":1.5},
-                "fire_station":{"keep":"yes","ceiling_height":None,"floor_numbers":1.5},
-                "government":{"keep":"yes","ceiling_height":None,"floor_numbers":None},
-                "houseboat":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "hut":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "hospital":{"keep":"yes","ceiling_height":None,"floor_numbers":None},
-                "kindergarten":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
-                "museum":{"keep":"yes","ceiling_height":None,"floor_numbers":2},
-                "public":{"keep":"yes","ceiling_height":None,"floor_numbers":None},
-                "livestock":{"keep":"no","ceiling_height":None,"floor_numbers":1},
-                "military":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "school":{"keep":"yes","ceiling_height":None,"floor_numbers":None},
-                "train_station":{"keep":"yes","ceiling_height":None,"floor_numbers":None},
-                "transportation":{"keep":"yes","ceiling_height":None,"floor_numbers":None},
-                "university":{"keep":"yes","ceiling_height":None,"floor_numbers":None},
-                "outbuilding":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "pagoda":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "commercial":{"keep":"yes","ceiling_height":4.5,"floor_numbers":None},
-                "industrial":{"keep":"yes","ceiling_height":6,"floor_numbers":None},
-                "kiosk":{"keep":"yes","ceiling_height":3,"floor_numbers":1},
-                "office":{"keep":"yes","ceiling_height":4.5,"floor_numbers":None},
-                "quonset_hut":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "retail":{"keep":"yes","ceiling_height":4.5,"floor_numbers":None},
-                "supermarket":{"keep":"yes","ceiling_height":4.5,"floor_numbers":None},
-                "warehouse":{"keep":"yes","ceiling_height":6,"floor_numbers":1},
-                "cathedral":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
-                "roof":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "ruins":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "chapel":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
-                "church":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
-                "service":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "shed":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "ship":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "kingdom_hall":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
-                "silo":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "slurry_tank":{"keep":"no","ceiling_height":None,"floor_numbers":1},
-                "monastery":{"keep":"yes","ceiling_height":None,"floor_numbers":None},
-                "mosque":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
-                "stable":{"keep":"no","ceiling_height":None,"floor_numbers":1},
-                "presbytery":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
-                "religious":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
-                "shrine":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
-                "storage_tank":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "sty":{"keep":"no","ceiling_height":None,"floor_numbers":1},
-                "synagogue":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
-                "temple":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
-                "tech_cab":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "grandstand":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
-                "tent":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "pavilion":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
-                "toilets":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "tower":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "riding_hall":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
-                "transformer_tower":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "sports_centre":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
-                "tree_house":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "triumphal_arch":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "trullo":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "sports_hall":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
-                "stadium":{"keep":"yes","ceiling_height":None,"floor_numbers":1},
-                "water_tower":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "windmill":{"keep":"no","ceiling_height":None,"floor_numbers":None},
-                "yes":{"keep":"yes","ceiling_height":None,"floor_numbers":None}
                 },
             'cluster_centers': np.array([
                                         [0.11, 0.17],
@@ -152,17 +160,9 @@ input_data= {
                                         [0.35, 0.78],
                                         [0.19, 0.92],
                                         [0.12, 0.50],
-                                        [0.39, 3.32]
+                                        #[0.39, 3.32]
                                     ]),
-            'cluster_centers2': np.array([
-                                        [0.11, 0.17],
-                                        [0.18, 0.44],
-                                        [0.34, 1.66],
-                                        [0.35, 0.78],
-                                        [0.19, 0.92],
-                                        [0.12, 0.50]
-                                    ]),
-            'outputfile': "results.shp" #path to the output file
+            'outputfile': "scrupt_unified_results.shp" #path to the output file
     }
 
 
@@ -175,7 +175,7 @@ input_data= {
 
 #C:\Users\vagva\AppData\Local\Programs\Python\Python313\Lib\site-packages\pyogrio\gdal_data
 
-def get_buildings(country:str, crs:int, city_boundary = None, drop_btypes=None, download=True):
+def get_buildings(country:str, crs:int, study_area:str = None, min_building_area=0, drop_btypes:bool=True, floors_levels_model_train_local:bool=True, download:bool=True):
     """Given the country and a shapefile as a city boundary
        this function downloads the .pbf data from geofabrik
        and extracts the buildings
@@ -200,14 +200,15 @@ def get_buildings(country:str, crs:int, city_boundary = None, drop_btypes=None, 
     df_filtered = df_filtered.to_crs(crs)
 
     #keep only the building types we are interested in
-    if drop_btypes:
-        drop_building_types(buildings, drop_btypes)
+    if not drop_btypes:
+        df_filtered = drop_building_types(df_filtered, input_data['floor_levels']['building_floors'])
     
     
     ###calculate the Ground Space (area) of each building
     df_filtered['GS']=df_filtered.area
+    
     ###keep only buildings with area equal or larger than 15sqm
-    df_filtered = df_filtered[df_filtered['GS'] >= 15]
+    df_filtered = df_filtered[df_filtered['GS'] >= min_building_area]
     
 
 
@@ -219,8 +220,8 @@ def get_buildings(country:str, crs:int, city_boundary = None, drop_btypes=None, 
     df_filtered['lvl'] = pd.to_numeric(df_filtered['lvl'], errors='coerce')
     
     ####keep only the buildings in our study area
-    if city_boundary:
-        city = gpd.read_file(f"{city_boundary}")
+    if floors_levels_model_train_local:
+        city = gpd.read_file(f"{study_area}")
         city = city.to_crs(df_filtered.crs)
         buildings = sjoin(df_filtered,city,how='inner')
     else:
@@ -235,12 +236,13 @@ def get_buildings(country:str, crs:int, city_boundary = None, drop_btypes=None, 
 
     return buildings
 
-def drop_building_types(buildings, drop_btypes):
+def drop_building_types(buildings, drop_btypes:dict):
         drop_types_list=[]
-        for btype in input_data['building_floors'].keys():
-            if input_data['building_floors'][btype]['keep']=='no':
+        for btype in drop_btypes.keys():
+            if drop_btypes[btype]['keep']=='no':
                 drop_types_list.append(btype)
-        df_filtered=df_filtered.drop(df[df.building.isin(drop_types_list)].index)
+        buildings=buildings.drop(buildings[buildings.building.isin(drop_types_list)].index)
+        return buildings
     
 
 def get_building_height_from_copernicus(buildings,raster):
@@ -298,25 +300,30 @@ def calculate_floors_from_building_height(buildings, building_floors):
     #make sure we include additional building types from the dataset to our assumptions
     building_types = buildings['building'].unique()
     for btype in building_types:
-        if btype  not in input_data['building_floors'].keys():
-            print(btype)
-            input_data['building_floors'][btype] = {"keep":"yes","ceiling_height":None,"floor_numbers":None}
+        if btype  not in input_data['floor_levels']['building_floors'].keys():
+            input_data['floor_levels']['building_floors'][btype] = {"keep":"yes","ceiling_height":None,"floor_numbers":None}
 
     
-    buildings['lvl'] = buildings.apply(lambda row: round(row['hght'] / building_floors[row['building']]['ceiling_height']) if pd.isna(row['lvl']) and not pd.isna(row['hght']) and building_floors[row['building']]['ceiling_height']  else row['lvl'], axis=1)
+    buildings['lvl'] = buildings.apply(lambda row: round(row['height_final'] / input_data['floor_levels']['building_floors'][row['building']]['ceiling_height']) if pd.isna(row['lvl']) and not pd.isna(row['height_final']) and input_data['floor_levels']['building_floors'][row['building']]['ceiling_height']  else row['lvl'], axis=1)
 
     return buildings
 
 def assign_assumed_floors(buildings, building_floors):
-
     
-    buildings['lvl'] = buildings.apply(lambda row: building_floors[row['building']]['floor_numbers'] if pd.isna(row['lvl']) and pd.isna(row['hght']) and building_floors[row['building']]['floor_numbers'] else row['lvl'], axis=1)
+    #If we have an assumed floor number, buildinds can deviate at most +-1 floor from this number
+    buildings['lvl'] = buildings.apply(lambda row: input_data['floor_levels']['building_floors'][row['building']]['floor_numbers'] + 1 if (not pd.isna(input_data['floor_levels']['building_floors'][row['building']]['floor_numbers'])) and row['lvl'] > input_data['floor_levels']['building_floors'][row['building']]['floor_numbers'] + 1  and (not pd.isna(row['height_final']))  
+                                       else  max(input_data['floor_levels']['building_floors'][row['building']]['floor_numbers'] - 1, 1) if (not pd.isna(input_data['floor_levels']['building_floors'][row['building']]['floor_numbers'])) and row['lvl'] <= input_data['floor_levels']['building_floors'][row['building']]['floor_numbers'] - 1  and (not pd.isna(row['height_final']))
+                                       else row['lvl'], axis=1)
+    
+    #If we don't know the building height but we know the building type assign number of floors for some building types based on assumptions
+    buildings['lvl'] = buildings.apply(lambda row: input_data['floor_levels']['building_floors'][row['building']]['floor_numbers'] if pd.isna(row['lvl']) and pd.isna(row['height_final']) and input_data['floor_levels']['building_floors'][row['building']]['floor_numbers'] else row['lvl'], axis=1)
 
     return buildings
 
-def predict_floor_number(buildings, model_train = 'local', Training_ratio = 0.7):
+def predict_floor_number(buildings, floors_levels_model_train_local, study_area, use_btypes_for_training=True, Training_ratio = 0.7):
     """https://github.com/perezjoan/Population-Potential-on-Catchment-Area---PPCA-Worldwide/blob/main/current%20release%20(v1.0.5)/STEP%203%20-%20FLOOR%20ESTIMATION.ipynb"""
     print(f"\t Calculating building floor space area")
+        
     #calculate the building floorspace
     buildings = calculate_building_floorspace(buildings)
 
@@ -325,14 +332,19 @@ def predict_floor_number(buildings, model_train = 'local', Training_ratio = 0.7)
     # 2.1 SUBSET DATA INTO TRAIN AND TEST DATA
 
     # List of columns to keep
-    columns_to_keep = ['building', 'GS', 'P', 'E', 'C', 'FS', 'ECA', 'EA', 'SW', 'lvl']
+    columns_to_keep = ['GS', 'P', 'E', 'C', 'FS', 'ECA', 'EA', 'SW', 'lvl']
 
-
-    # Subset the DataFrame
-    building_filtered = buildings[columns_to_keep]
-
-    #create dummy variables from building type
-    building_filtered = pd.get_dummies(building_filtered, prefix='type', dtype=float) 
+    #if we want to use building types for the model training we have to create duummy variables for each type
+    if use_btypes_for_training:
+        columns_to_keep.append('building')
+        
+        # Subset the DataFrame
+        building_filtered = buildings[columns_to_keep]
+        
+        #create dummy variables from building type
+        building_filtered = pd.get_dummies(building_filtered, prefix='type', dtype=float)
+    else:
+        building_filtered = buildings[columns_to_keep]
 
 
     # Create two subsets: one with non-null 'FL' and one with null 'FL'
@@ -417,31 +429,40 @@ def predict_floor_number(buildings, model_train = 'local', Training_ratio = 0.7)
     building_final['B_Area']= building_final['GS']
     building_final['B_GFArea'] = building_final['lvl_filled'] * building_final['B_Area']
 
+    if not floors_levels_model_train_local:
+        city = gpd.read_file(f"{study_area}")
+        city = city.to_crs(df_filtered.crs)
+        building_final = sjoin(df_filtered,city,how='inner')
+
 
     return building_final
 
 
-def floor_estimation(buildings, copernicus_data= None, building_assumptions = None,  assumed_ceiling_heights=False, assumed_floor_number=False, model_train='local'):
+def floor_estimation(buildings, floors_levels_model_train_local, study_area, copernicus_data= None, building_assumptions = None,  assumed_ceiling_heights=False, assumed_floor_number=False, use_btypes_for_training=True):
 
     print(f"Step B: Running floor estimations")
 
     #Get the building height from Copernicus if there is available data
     if copernicus_data:
+        print(f"Step B.1: Calculating building heights from copernicus data")
         buildings = get_building_height_from_copernicus(buildings, copernicus_data)
 
-    #If we have building height from copernicus keep that, if we don't, use the OSM height, if we don't have OSM height, leave it empty
-    buildings['height_final'] = buildings.apply(lambda row: row['cop_mean_height'] if not pd.isna(row['cop_mean_height'])  else row['hght'] if not pd.isna(row['hght']) else np.nan, axis=1)
+    #If we have building height from OSM keep that, if we don't, use the Copernicus height, if we don't have Copernicus height, leave it empty
+    buildings['height_final'] = buildings.apply(lambda row: row['hght'] if not pd.isna(row['hght'])  else row['cop_mean_height'] if not pd.isna(row['cop_mean_height']) else np.nan, axis=1)
 
     #If we know the building height and type, calculate the number of floors based on building height and celing height assumption for each building type
     if assumed_ceiling_heights:
+        print(f"Step B.2: Calculating the number of floors based on building height and celing height assumption for each building type")
         buildings = calculate_floors_from_building_height(buildings, building_assumptions)
 
     #If we don't know the building height but we know the building type assign number of floors for some building types based on assumptions
-    if assumed_floor_numbers:
+    if assumed_floor_number:
+        print(f"Step B.3: Assigning number of floors based on building assumptions")
         buildings = assign_assumed_floors(buildings, building_assumptions)
 
     #for the rest of the buildings where we don't know the building floors, train a model to predict it.
-    buildings = predict_floor_number(buildings, model_train=model_train)
+    print(f"Step B.4: Predicting floor number based on model training")
+    buildings = predict_floor_number(buildings, floors_levels_model_train_local, study_area, use_btypes_for_training=True)
 
     return buildings
 
@@ -449,7 +470,8 @@ def floor_estimation(buildings, copernicus_data= None, building_assumptions = No
     
     
 
-def get_streets(city_boundary:str, crs:int, download=True):
+def get_streets(study_area:str, crs:int, download=True):
+    #Flavias code
 
     """Given the country and a shapefile as a city boundary
        this function downloads the .pbf data from geofabrik
@@ -462,7 +484,7 @@ def get_streets(city_boundary:str, crs:int, download=True):
     print("Step C: Getting streets.....")
 
     # Import data
-    area = gpd.read_file(city_boundary)
+    area = gpd.read_file(study_area)
     buffer_non_motorized = area.buffer(5000)
 
     # Transform the non-motorized buffer to EPSG:4326 for OSMnx compatibility
@@ -859,19 +881,19 @@ def perform_Attraction_Reach_Analysis(road_network, crs, radius_type, radius_thr
         roads[f'ARA{radius_type[0]}{radius_threshold}']=pd.Series(scores)
         return roads
 
-def calculate_FSI(dataframe, catchment_area, total_ground_area):
-    dataframe['FSI'] = dataframe[total_ground_area]/dataframe[catchment_area]
+def calculate_FSI(dataframe, catchment_area, total_floor_area):
+    dataframe['FSI'] = dataframe[total_floor_area]/dataframe[catchment_area]
     return dataframe
 
-def calculate_GSI(dataframe, catchment_area, total_floor_area):
-    dataframe['GSI'] = dataframe[total_floor_area]/dataframe[catchment_area]
+def calculate_GSI(dataframe, catchment_area, total_ground_area):
+    dataframe['GSI'] = dataframe[total_ground_area]/dataframe[catchment_area]
     return dataframe
 
 
 
 
 def calculate_clusters (dataframe, cluster_centers):
-    #dataframe=dataframe[dataframe['RAaw500']>0]
+    dataframe=dataframe[dataframe['RAaw500']>0]
 
     kmeans = KMeans(n_clusters=len(cluster_centers), init= cluster_centers, n_init=10, max_iter=300).fit(cluster_centers)
     print(kmeans.cluster_centers_)
@@ -887,52 +909,67 @@ def calculate_clusters (dataframe, cluster_centers):
 
 ###################SCRIPT EXECUTION####################################
 
-stepA=get_buildings(input_data['country'], input_data['crs'], input_data['study_area'],  download=False)
-stepA.to_file("buildings_gbg_drop_btypes4.shp")
-buildingsdf=gpd.read_file("buildings_gbg_drop_btypes4.shp")
+#stepA=get_buildings(country=input_data['country'],
+#                    crs=input_data['crs'],
+#                    study_area=input_data['study_area'],
+#                    min_building_area=input_data['min_building_area'],
+#                    drop_btypes=input_data['drop_btypes'],
+#                    floors_levels_model_train_local=input_data['floor_levels']['floors_levels_model_train_local'],
+#                    download=False)
 
-stepB=floor_estimation(buildingsdf, copernicus_data=input_data['copernicus_raster_file'],building_assumptions = input_data['building_floors'], assumed_ceiling_heights = True, assumed_floor_number = True)
-stepB.to_file("GBG_buildings_floors.shp")
+#stepA.to_file("tests/new_buildings_20250505.gpkg")
+#buildingsdf=gpd.read_file("tests/new_buildings_20250505.gpkg")
 
-#stepC=get_streets(input_data['study_area'], input_data['crs'])
-#stepC.to_file("streetnonmotorized.shp")
 
-#stepD=perform_Reach_Analysis(road_network="streetnonmotorized.shp",
-#                             crs=input_data['crs'],
-#                             radius_type=input_data['pst_params']['radius_type'],
-#                             radius_threshold=input_data['pst_params']['radius_threshold'],
-#                             origin_points="buildings_floors.shp")
-#stepD.to_file("got_buildings_reach_test_Test2.shp")
+#stepB=floor_estimation(buildingsdf,
+#                       floors_levels_model_train_local = input_data['floor_levels']['floors_levels_model_train_local'],
+#                       study_area = input_data['study_area'],
+#                       copernicus_data=input_data['floor_levels']['copernicus_raster_file'],
+#                       building_assumptions = input_data['floor_levels']['building_floors'],
+#                       assumed_ceiling_heights = input_data['floor_levels']['assumed_ceiling_heights'],
+#                      assumed_floor_number = input_data['floor_levels']['assumed_floor_number'],
+#                       use_btypes_for_training=input_data['floor_levels']['use_btypes_for_training'] )
+#stepB.to_file("tests/new_buildings_20250505_floors.gpkg.shp")
 
-#stepE=perform_Attraction_Reach_Analysis(road_network="streetnonmotorized.shp",
-#                         crs=input_data['crs'],
-#                         radius_type=input_data['pst_params']['radius_type'],
-#                         radius_threshold=input_data['pst_params']['radius_threshold'],
-#                         origin_points="got_buildings_reach_test_Test2.shp",
-#                         destinations="buildings_floors.shp",
-#                         weight_attr='B_Area',
-#                         outputname='AFS')
+stepC=get_streets(input_data['study_area'], input_data['crs'])
+stepC.to_file("streetnonmotorized.shp")
 
-#stepF=calculate_FSI(stepE,'RAaw500','AFS')
-#stepF.to_file("got_buildings_reach_test_Test3.shp")
+stepD=perform_Reach_Analysis(road_network="streetnonmotorized.shp",
+                             crs=input_data['crs'],
+                             radius_type=input_data['pst_params']['radius_type'],
+                             radius_threshold=input_data['pst_params']['radius_threshold'],
+                             origin_points="tests/new_buildings_20250505_floors.gpkg.shp")
+stepD.to_file("tests/got_buildings_reach_test_Test2.shp")
 
-#stepG=perform_Attraction_Reach_Analysis(road_network="streetnonmotorized.shp",
-#                         crs=input_data['crs'],
-#                         radius_type=input_data['pst_params']['radius_type'],
-#                         radius_threshold=input_data['pst_params']['radius_threshold'],
-#                         origin_points="got_buildings_reach_test_Test3.shp",
-#                         destinations="buildings_floors.shp",
-#                         weight_attr='B_GFArea',
-#                         outputname='AGS')
-#stepH=calculate_GSI(stepG,'RAaw500','AGS')
-#stepH.to_file("got_buildings_reach_test_Test4.shp")
+stepE=perform_Attraction_Reach_Analysis(road_network="streetnonmotorized.shp",
+                         crs=input_data['crs'],
+                         radius_type=input_data['pst_params']['radius_type'],
+                         radius_threshold=input_data['pst_params']['radius_threshold'],
+                         origin_points="tests/got_buildings_reach_test_Test2.shp",
+                         destinations="tests/new_buildings_20250505_floors.gpkg.shp",
+                         weight_attr='B_Area',
+                         outputname='AGS')
 
-#stepI=calculate_clusters(stepH, input_data['cluster_centers'])
+stepF=calculate_GSI(stepE,'RAaw500','AGS')
+stepF.to_file("tests/got_buildings_reach_test_Test3.shp")
 
-#stepI.to_file(input_data['outputfile'])
+stepG=perform_Attraction_Reach_Analysis(road_network="streetnonmotorized.shp",
+                         crs=input_data['crs'],
+                         radius_type=input_data['pst_params']['radius_type'],
+                         radius_threshold=input_data['pst_params']['radius_threshold'],
+                         origin_points="tests/got_buildings_reach_test_Test3.shp",
+                         destinations="tests/new_buildings_20250505_floors.gpkg.shp",
+                         weight_attr='B_GFArea',
+                         outputname='AFS')
+stepH=calculate_FSI(stepG,'RAaw500','AFS')
+stepH.to_file("tests/got_buildings_reach_test_Test4.shp")
 
-#stepJ=calculate_clusters(stepH, input_data['cluster_centers2'])
-#stepJ.to_file('results2.shp')
+stepI=calculate_clusters(stepH, input_data['cluster_centers'])
+
+stepI.to_file(input_data['outputfile'])
+
+stepJ=calculate_clusters(stepH, input_data['cluster_centers'])
+stepJ.to_file('tests/results_20250505.shp')
 
 ##
 

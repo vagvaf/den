@@ -175,7 +175,7 @@ input_data= {
 ####################FUNCTION DEFINITION#################################
 
 
-#C:\Users\vagva\AppData\Local\Programs\Python\Python313\Lib\site-packages\pyogrio\gdal_data
+#C:\Users\vagva\AppData\Local\Programs\Python\Python313\Lib\site-packages\pyogrio\gdal_data\osmconf.ini
 
 def get_buildings(country:str, crs:int, study_area:str = None, min_building_area=0, drop_btypes:bool=True, floors_levels_model_train_local:bool=True, download:bool=True):
     """Given the country and a shapefile as a city boundary

@@ -16,10 +16,12 @@ from sklearn.preprocessing import OneHotEncoder
 import sys, array
 import rasterio
 from rasterstats import zonal_stats
+from rasterio.features import shapes
+from shapely.geometry import shape
 
 import time
 
-sys.path.append("C:/Users/evavaf/OneDrive - Chalmers/Buildingdensities/pst/pstalgo/python")
+sys.path.append("C:/Users/vagva/OneDrive/Documents/PST_UC/pstqgis_3.3.1_2024-11-01/pst/pstalgo/python")
 import pstalgo
 
 from pstalgo import Radii, DistanceType, OriginType
@@ -32,17 +34,17 @@ warnings.simplefilter('ignore')
 
 
 input_data= {
-            'country': 'sweden',
-            'study_area': 'gbg.shp', #path to a polygon shapefile containing the study area
+            'country': 'sweden', #country name based on https://download.geofabrik.de/europe.html
+            'study_area': 'esk.shp', #path to a polygon shapefile containing the study area
             'crs': 3006, #epsg number of the area's crs
-            'min_building_area': 20,
-            'drop_btypes': False,
+            'min_building_area': 20, #exclude buildings with area less than this value
+            'drop_btypes': False, #include or not building types
             'floor_levels':{
-                    'copernicus_raster_file': r"C:/Users/evavaf/OneDrive - Chalmers/Buildingdensities/SE002_GÖTEBORG_UA2012_DHM_V010.tif",
-                    'floors_levels_model_train_local':True,
-                    'assumed_ceiling_heights': True,
-                    'assumed_floor_number': True,
-                    'use_btypes_for_training': True,
+                    'copernicus_raster_file': r"cpnc/SE002_GÖTEBORG_UA2012_DHM_V010.tif", # path to copernicus raster file. get data from: https://land.copernicus.eu/en/products/urban-atlas/building-height-2012#download
+                    'floors_levels_model_train_local':False,
+                    'assumed_ceiling_heights': True, #do we provide assumptions regarding celing heights?
+                    'assumed_floor_number': True, #do we provide assumptions regarding floor number?
+                    'use_btypes_for_training': True, #do we want to use builging types for floor level estimation?
                     'building_floors': {
                         'allotment_house':{'keep':'yes','ceiling_height':None,'floor_numbers':None},
                         'annexe':{'keep':'yes','ceiling_height':3,'floor_numbers':None},
@@ -149,8 +151,8 @@ input_data= {
                     }
                 },
             'pst_params':{
-                'radius_type':'walking',
-                'radius_threshold':500,
+                'radius_type':'walking', #choose between one: straight, walking, steps, angular or axmeter
+                'radius_threshold':500, #units based on the radius_type selection
                 'unlinks': '' #shapefile with unlinks
                 },
             'cluster_centers': np.array([
@@ -162,7 +164,7 @@ input_data= {
                                         [0.12, 0.50],
                                         #[0.39, 3.32]
                                     ]),
-            'outputfile': "scrupt_unified_results.shp" #path to the output file
+            'outputfile': "script_unified_results_20250630.gpkg" #path to the output file
     }
 
 
@@ -218,23 +220,31 @@ def get_buildings(country:str, crs:int, study_area:str = None, min_building_area
     # Ensure height & level columns are numeric
     df_filtered['hght'] = pd.to_numeric(df_filtered['hght'], errors='coerce')
     df_filtered['lvl'] = pd.to_numeric(df_filtered['lvl'], errors='coerce')
-    
-    ####keep only the buildings in our study area
-    if floors_levels_model_train_local:
-        city = gpd.read_file(f"{study_area}")
-        city = city.to_crs(df_filtered.crs)
-        buildings = sjoin(df_filtered,city,how='inner')
-    else:
-        buildings = df_filtered
-        
 
+    #keep the buildings in our study area
+
+    city = gpd.read_file(f"{study_area}")
+    city = city.to_crs(df_filtered.crs)
+    buildings = sjoin(df_filtered,city,how='inner')
     #compute the morphometric indicators
     compute_morphometric_indicators(buildings)
+    
+    ####If we choose to base the training of our building heights on another city, grab the buildings of that city too.
+    if floors_levels_model_train_local:
+        non_local_buildings = None
+    else:
+        non_local_buildings_area = vectorize_copernicus(input_data['floor_levels']['copernicus_raster_file'])
+        non_local_buildings_area= non_local_buildings_area.to_crs(df_filtered.crs)
+        non_local_buildings = sjoin(df_filtered,non_local_buildings_area,how='inner')
+        compute_morphometric_indicators(non_local_buildings)
+
+    
 
     endtime = time.time()
+    combined_buildings = pd.concat([buildings, non_local_buildings])
     print(f"Done ({int(endtime-starttime)}sec) ")
 
-    return buildings
+    return combined_buildings
 
 def drop_building_types(buildings, drop_btypes:dict):
         drop_types_list=[]
@@ -243,6 +253,21 @@ def drop_building_types(buildings, drop_btypes:dict):
                 drop_types_list.append(btype)
         buildings=buildings.drop(buildings[buildings.building.isin(drop_types_list)].index)
         return buildings
+
+
+def vectorize_copernicus(raster):
+    #read the raster and get crs
+    src = rasterio.open(raster)
+    raster_crs = src.crs.to_authority()[1]
+
+    data = src.read(1, masked=True)
+
+    shape_gen = ((shape(s), v) for s, v in shapes(data, transform=src.transform))
+
+    gdf = gpd.GeoDataFrame(dict(zip(["geometry", "class"], zip(*shape_gen))), crs=src.crs)
+
+    return gdf
+    
     
 
 def get_building_height_from_copernicus(buildings,raster):
@@ -431,8 +456,9 @@ def predict_floor_number(buildings, floors_levels_model_train_local, study_area,
 
     if not floors_levels_model_train_local:
         city = gpd.read_file(f"{study_area}")
-        city = city.to_crs(df_filtered.crs)
-        building_final = sjoin(df_filtered,city,how='inner')
+        city = city.to_crs(building_final.crs)
+        building_final = building_final.drop(['index_right'], axis=1)
+        building_final = sjoin(building_final,city,how='inner')
 
 
     return building_final
@@ -440,12 +466,15 @@ def predict_floor_number(buildings, floors_levels_model_train_local, study_area,
 
 def floor_estimation(buildings, floors_levels_model_train_local, study_area, copernicus_data= None, building_assumptions = None,  assumed_ceiling_heights=False, assumed_floor_number=False, use_btypes_for_training=True):
 
+        
     print(f"Step B: Running floor estimations")
 
     #Get the building height from Copernicus if there is available data
     if copernicus_data:
         print(f"Step B.1: Calculating building heights from copernicus data")
         buildings = get_building_height_from_copernicus(buildings, copernicus_data)
+    else:
+        buildings['cop_mean_height']=np.nan
 
     #If we have building height from OSM keep that, if we don't, use the Copernicus height, if we don't have Copernicus height, leave it empty
     buildings['height_final'] = buildings.apply(lambda row: row['hght'] if not pd.isna(row['hght'])  else row['cop_mean_height'] if not pd.isna(row['cop_mean_height']) else np.nan, axis=1)
@@ -460,11 +489,15 @@ def floor_estimation(buildings, floors_levels_model_train_local, study_area, cop
         print(f"Step B.3: Assigning number of floors based on building assumptions")
         buildings = assign_assumed_floors(buildings, building_assumptions)
 
+    buildings.to_file("eskilstuna_before_train.gpkg")
+
     #for the rest of the buildings where we don't know the building floors, train a model to predict it.
     print(f"Step B.4: Predicting floor number based on model training")
     buildings = predict_floor_number(buildings, floors_levels_model_train_local, study_area, use_btypes_for_training=True)
 
     return buildings
+        
+        
 
 
     
@@ -890,89 +923,15 @@ def calculate_GSI(dataframe, catchment_area, total_ground_area):
     return dataframe
 
 
-
-
 def calculate_clusters (dataframe, cluster_centers):
     dataframe=dataframe[dataframe['RAaw500']>0]
 
     kmeans = KMeans(n_clusters=len(cluster_centers), init= cluster_centers, n_init=10, max_iter=300).fit(cluster_centers)
-    print(kmeans.cluster_centers_)
     
-
     kmeans_predict=kmeans.predict(dataframe[['GSI','FSI']].to_numpy())
-
 
     dataframe['clusters']=kmeans_predict+1
     return dataframe
-    
-
-
-###################SCRIPT EXECUTION####################################
-
-#stepA=get_buildings(country=input_data['country'],
-#                    crs=input_data['crs'],
-#                    study_area=input_data['study_area'],
-#                    min_building_area=input_data['min_building_area'],
-#                    drop_btypes=input_data['drop_btypes'],
-#                    floors_levels_model_train_local=input_data['floor_levels']['floors_levels_model_train_local'],
-#                    download=False)
-
-#stepA.to_file("tests/new_buildings_20250505.gpkg")
-#buildingsdf=gpd.read_file("tests/new_buildings_20250505.gpkg")
-
-
-#stepB=floor_estimation(buildingsdf,
-#                       floors_levels_model_train_local = input_data['floor_levels']['floors_levels_model_train_local'],
-#                       study_area = input_data['study_area'],
-#                       copernicus_data=input_data['floor_levels']['copernicus_raster_file'],
-#                       building_assumptions = input_data['floor_levels']['building_floors'],
-#                       assumed_ceiling_heights = input_data['floor_levels']['assumed_ceiling_heights'],
-#                      assumed_floor_number = input_data['floor_levels']['assumed_floor_number'],
-#                       use_btypes_for_training=input_data['floor_levels']['use_btypes_for_training'] )
-#stepB.to_file("tests/new_buildings_20250505_floors.gpkg.shp")
-
-stepC=get_streets(input_data['study_area'], input_data['crs'])
-stepC.to_file("streetnonmotorized.shp")
-
-stepD=perform_Reach_Analysis(road_network="streetnonmotorized.shp",
-                             crs=input_data['crs'],
-                             radius_type=input_data['pst_params']['radius_type'],
-                             radius_threshold=input_data['pst_params']['radius_threshold'],
-                             origin_points="tests/new_buildings_20250505_floors.gpkg.shp")
-stepD.to_file("tests/got_buildings_reach_test_Test2.shp")
-
-stepE=perform_Attraction_Reach_Analysis(road_network="streetnonmotorized.shp",
-                         crs=input_data['crs'],
-                         radius_type=input_data['pst_params']['radius_type'],
-                         radius_threshold=input_data['pst_params']['radius_threshold'],
-                         origin_points="tests/got_buildings_reach_test_Test2.shp",
-                         destinations="tests/new_buildings_20250505_floors.gpkg.shp",
-                         weight_attr='B_Area',
-                         outputname='AGS')
-
-stepF=calculate_GSI(stepE,'RAaw500','AGS')
-stepF.to_file("tests/got_buildings_reach_test_Test3.shp")
-
-stepG=perform_Attraction_Reach_Analysis(road_network="streetnonmotorized.shp",
-                         crs=input_data['crs'],
-                         radius_type=input_data['pst_params']['radius_type'],
-                         radius_threshold=input_data['pst_params']['radius_threshold'],
-                         origin_points="tests/got_buildings_reach_test_Test3.shp",
-                         destinations="tests/new_buildings_20250505_floors.gpkg.shp",
-                         weight_attr='B_GFArea',
-                         outputname='AFS')
-stepH=calculate_FSI(stepG,'RAaw500','AFS')
-stepH.to_file("tests/got_buildings_reach_test_Test4.shp")
-
-stepI=calculate_clusters(stepH, input_data['cluster_centers'])
-
-stepI.to_file(input_data['outputfile'])
-
-stepJ=calculate_clusters(stepH, input_data['cluster_centers'])
-stepJ.to_file('tests/results_20250505.shp')
-
-##
-
 
 def calculate_clusters_2 (dataframe, cluster_centers):
 
@@ -982,13 +941,69 @@ def calculate_clusters_2 (dataframe, cluster_centers):
     dataframe['clusters']=kmeans.labels_+1
     print(kmeans.cluster_centers_)
     return dataframe
+    
 
-#gbg_buildings=gpd.read_file("GOT_Building_Local_CL7_fixed_nonzero.shp")
-#a=calculate_clusters_2(gbg_buildings, input_data['cluster_centers'])
-#a.to_file("gbg_clusters_7.shp")
-#b=calculate_clusters_2(gbg_buildings, input_data['cluster_centers2'])
-#b.to_file("gbg_clusters_6.shp")
-#c=calculate_clusters(gbg_buildings, input_data['cluster_centers'])
-#c.to_file("gbg_clusters_noiter__7.shp")
-#d=calculate_clusters(gbg_buildings, input_data['cluster_centers2'])
-#d.to_file("gbg_clusters_noiter_6.shp")
+
+###################SCRIPT EXECUTION####################################
+
+stepA=get_buildings(country=input_data['country'],
+                    crs=input_data['crs'],
+                    study_area=input_data['study_area'],
+                    min_building_area=input_data['min_building_area'],
+                    drop_btypes=input_data['drop_btypes'],
+                    floors_levels_model_train_local=input_data['floor_levels']['floors_levels_model_train_local'],
+                    download=False)
+
+stepB=floor_estimation(stepA,
+                       floors_levels_model_train_local = input_data['floor_levels']['floors_levels_model_train_local'],
+                       study_area = input_data['study_area'],
+                       copernicus_data=input_data['floor_levels']['copernicus_raster_file'],
+                       building_assumptions = input_data['floor_levels']['building_floors'],
+                      assumed_ceiling_heights = input_data['floor_levels']['assumed_ceiling_heights'],
+                      assumed_floor_number = input_data['floor_levels']['assumed_floor_number'],
+                       use_btypes_for_training=input_data['floor_levels']['use_btypes_for_training'] )
+stepB.to_file("eskilstuna_without_gothenburg.gpkg")
+
+#stepC=get_streets(input_data['study_area'], input_data['crs'])
+#stepC.to_file("streetnonmotorized.shp")
+
+#stepD=perform_Reach_Analysis(road_network="streetnonmotorized.shp",
+#                             crs=input_data['crs'],
+#                             radius_type=input_data['pst_params']['radius_type'],
+#                             radius_threshold=input_data['pst_params']['radius_threshold'],
+#                             origin_points="new_buildings_20250626_stepb.gpkg")
+#stepD.to_file("new_buildings_20250626_stepd.gpkg")
+
+#stepE=perform_Attraction_Reach_Analysis(road_network="streetnonmotorized.shp",
+#                         crs=input_data['crs'],
+#                         radius_type=input_data['pst_params']['radius_type'],
+#                         radius_threshold=input_data['pst_params']['radius_threshold'],
+#                         origin_points="new_buildings_20250626_stepd.gpkg",
+#                         destinations="new_buildings_20250626_stepb.gpkg",
+#                         weight_attr='B_Area',
+#                         outputname='AGS')
+
+#stepF=calculate_GSI(stepE,'RAaw500','AGS')
+#stepF.to_file("new_buildings_20250626_stepf.gpkg")
+
+#stepG=perform_Attraction_Reach_Analysis(road_network="streetnonmotorized.shp",
+#                         crs=input_data['crs'],
+#                         radius_type=input_data['pst_params']['radius_type'],
+#                         radius_threshold=input_data['pst_params']['radius_threshold'],
+#                         origin_points="new_buildings_20250626_stepf.gpkg",
+#                         destinations="new_buildings_20250626_stepb.gpkg",
+#                         weight_attr='B_GFArea',
+#                         outputname='AFS')
+
+
+#stepH=calculate_FSI(stepG,'RAaw500','AFS')
+#stepH.to_file("new_buildings_20250626_steph.gpkg")
+
+#stepI=calculate_clusters(stepH, input_data['cluster_centers'])
+
+#stepI.to_file(input_data['outputfile'])
+
+
+
+
+
